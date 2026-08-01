@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { User } from "firebase/auth";
 
+import { observeAuthState } from "../services/auth";
+
 interface AuthState {
   user: User | null;
 
@@ -17,6 +19,8 @@ interface AuthState {
   setPairId: (pairId: string | null) => void;
 
   clearSession: () => void;
+
+  initialize: () => () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -51,4 +55,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       pairId: null,
       isPaired: false,
     }),
+
+  initialize: () => {
+    return observeAuthState((user) => {
+      set({
+        user,
+        loading: false,
+      });
+    });
+  },
 }));

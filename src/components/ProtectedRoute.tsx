@@ -1,6 +1,7 @@
-import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 
+import AuthLoading from "./AuthLoading";
 import { useAuthStore } from "../store/authStore";
 
 interface ProtectedRouteProps {
@@ -13,19 +14,7 @@ export default function ProtectedRoute({
   const { user, loading } = useAuthStore();
 
   if (loading) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "grid",
-          placeItems: "center",
-          fontSize: 18,
-          fontWeight: 500,
-        }}
-      >
-        Loading...
-      </div>
-    );
+    return <AuthLoading />;
   }
 
   if (!user) {

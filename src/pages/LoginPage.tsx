@@ -13,10 +13,16 @@ export default function LoginPage() {
 
       await signInWithGoogle();
 
-      navigate("/dashboard");
+      // Authentication complete.
+      // Pair Detection will later decide whether to
+      // continue to Pair or Shared World.
+      navigate("/pair", {
+        replace: true,
+      });
     } catch (err) {
       console.error(err);
-      alert("Login failed");
+
+      alert("Unable to sign in. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -35,7 +41,7 @@ export default function LoginPage() {
       <div
         style={{
           width: 420,
-          background: "white",
+          background: "#ffffff",
           padding: 40,
           borderRadius: 18,
           boxShadow: "0 15px 40px rgba(0,0,0,.08)",
@@ -43,8 +49,14 @@ export default function LoginPage() {
       >
         <h1>Welcome Back 👋</h1>
 
-        <p style={{ margin: "12px 0 30px", color: "#6b7280" }}>
-          Continue with Google
+        <p
+          style={{
+            marginTop: 12,
+            marginBottom: 30,
+            color: "#64748b",
+          }}
+        >
+          Continue your journey together.
         </p>
 
         <button
@@ -52,16 +64,16 @@ export default function LoginPage() {
           disabled={loading}
           style={{
             width: "100%",
-            padding: 14,
-            border: 0,
-            borderRadius: 10,
-            background: "#2563eb",
-            color: "white",
-            cursor: "pointer",
-            fontSize: 16,
+            padding: "14px",
+            border: "none",
+            borderRadius: "12px",
+            background: "#4f46e5",
+            color: "#fff",
+            cursor: loading ? "default" : "pointer",
+            fontWeight: 600,
           }}
         >
-          {loading ? "Signing In..." : "Continue with Google"}
+          {loading ? "Signing in..." : "Continue with Google"}
         </button>
       </div>
     </div>
