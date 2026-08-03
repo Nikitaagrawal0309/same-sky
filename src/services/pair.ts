@@ -223,8 +223,9 @@ export async function getPair(pairId: string): Promise<Pair | null> {
 export function subscribeToPair(
   pairId: string,
   callback: (pair: Pair | null) => void,
+  onError?: (error: Error) => void,
 ): () => void {
-  return subscribe<Pair>(PATHS.pair(pairId), callback);
+  return subscribe<Pair>(PATHS.pair(pairId), callback, onError);
 }
 
 /**

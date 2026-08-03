@@ -142,10 +142,14 @@ timeline, progress charts) exists and is wired end to end.
 
 # Immediate Next Priority
 
-0. **Confirm the Growth-page infinite-loop fix in a real signed-in session**
-   (see "Bug Fixes" below) — this environment cannot complete Google OAuth,
-   so the fix is verified by root-cause analysis and a full-codebase audit
-   only, not by re-observing the original crash firsthand.
+0. **Confirm both fixes in "Bug Fixes" below in a real signed-in session** —
+   this environment cannot complete Google OAuth, so neither the original
+   render-loop crash nor the subsequent infinite-loading-spinner fix has
+   been re-observed firsthand. Reload World and Growth; both should now
+   show either real content or a clear error, never an unresolving spinner.
+   If the console shows `"No world exists at ... Creating it now"`, that
+   pair's world was healed from stale data — worth a quick sanity check
+   that its tree/garden state looks right afterward.
 1. Accessibility audit — keyboard-only pass through every flow, screen
    reader spot-check, colour contrast check against the design tokens in
    `index.css` (light and dark)
@@ -288,6 +292,96 @@ same reference on every call while `ritualPlan` is `null`, and
   full-codebase audit for the same defect class, and clean build/lint/dev
   output; a real sign-in check by the project owner is the remaining step.
 
+## 2026-08-04 — World and Growth stuck on an infinite loading spinner
+
+**Symptom:** After the render-loop fix above, the render crash was gone and
+the console was clean, but World and Growth both stayed on their loading
+spinner indefinitely — never resolving to either the real content or an
+error.
+
+**Investigation:** Traced the complete lifecycle: `DashboardLayout` calls
+`useWorldStore().attach(pairId, uid)` once `pairId`/`uid` are known →
+`attach` subscribes to `pairs/{pairId}` → on receiving a pair, subscribes to
+`worlds/{worldId}` → that callback is the *only* place `status` is ever set
+to `"ready"`. Both `WorldPage` and `DashboardPage` gate their spinner on
+`status === "loading" || !world`.
+
+Two real defects were found in that chain, plus one repaired data problem:
+
+1. **`services/database.ts`'s `subscribe()` and `subscribeToRange()` had no
+   error handling.** `onValue(ref, successCallback)` was called with no
+   third (cancel/error) argument. If a listener is ever cancelled — a
+   security-rules rejection being the most common cause — the success
+   callback simply never fires again, and nothing downstream is told
+   anything went wrong. Any screen waiting on that first callback to flip a
+   loading flag would wait forever. **Fixed** by adding an `onError`
+   parameter throughout the subscription chain
+   (`subscribe` → `subscribeToRange` → `subscribeToPair` /
+   `subscribeToWorld` / `subscribeToRecentHistory` / `subscribeToRitualPlan`
+   / `subscribeToDayLedger`) that logs clearly
+   (`console.error("[Same Sky] Realtime read failed at ...")`) and lets
+   `worldStore` react.
+2. **`worldStore.attach()` had no fallback if neither the pair nor the world
+   subscription ever called back at all** (a stalled connection that
+   resolves neither successfully nor with an error). **Fixed** with a
+   15-second safety timer: if `status` is still `"loading"` when it fires,
+   it force-sets `status: "error"` with a clear message. Combined with (1),
+   `status` can now only ever end up as `"ready"` or `"error"` — never stuck.
+   `DashboardPage` (which previously had no error branch at all, only a
+   spinner-or-content check) now handles `status === "error"` the same way
+   `WorldPage` already did.
+3. **The actual data-flow problem in this session's case:** ruled out
+   security rules directly — an unauthenticated shallow read of the database
+   root correctly returned `"Permission denied"` (rules are in effect and
+   working as intended), and the dev server's terminal (which proxies
+   client console output) showed real browser activity from a signed-in
+   session — including a `console.warn` from `useAmbientAudio`, which only
+   runs once `WorldPage` has mounted — with **zero** permission or read
+   errors anywhere in the log, before or after the fixes in this entry. An
+   error-free, permanently-null `world` is exactly what you get when
+   `subscribeToWorld` is listening at a path that has no data — most
+   plausibly a pair whose world was written under the *old*, pre-fix
+   `world/{worldId}` path (see the first bug fix in this project's history)
+   and never migrated to the current `worlds/{worldId}`. **Fixed** by making
+   world creation self-healing: when the world subscription reports
+   `world === null` for an otherwise-valid pair, `worldStore` now calls
+   `ensureWorld(pair.worldId, pair.id, getPartnerUids(pair))` — the same
+   idempotent function pairing already uses, which only ever creates what is
+   missing and never overwrites existing data — and the same listener then
+   receives the newly created world automatically.
+
+**Diagnostic logging added** (kept, not stripped — these are exactly the
+breadcrumbs the next occurrence of this class of bug needs, and they are
+`console.info`/`console.warn`/`console.error`, all visible under Chrome
+DevTools' default console filter, unlike `console.debug` which is hidden
+under "Verbose" by default): `worldStore.attach()` now logs when it attaches,
+every pair snapshot received, every world snapshot received (and whether it
+existed), every subscription error, and every self-heal attempt.
+
+**Verification performed:**
+
+- `npm run build` — passes.
+- `npm run lint` — passes.
+- `npm run dev` — restarted cleanly on port 5173 (Zustand store modules
+  don't hot-reload their singleton state correctly, so a full restart was
+  used rather than relying on HMR).
+- Headless-browser smoke test of the unauthenticated golden path — clean,
+  no console errors.
+- Inspected the running dev server's own terminal log (which mirrors client
+  console output) for the several hours it had been running: real signed-in
+  browser activity is visible in it, and it contains zero permission or
+  Firebase errors at any point, which is what directed the fix toward a
+  missing/stale world document rather than a security-rules problem.
+- **Still not independently confirmed in a real signed-in session.** This
+  environment cannot complete Google OAuth. The fix is verified by tracing
+  the complete lifecycle, closing every path that could leave `status`
+  permanently `"loading"`, and reasoning from the real (error-free) log
+  output captured from an actual browser session against this exact code.
+  The project owner reloading World and Growth is the remaining
+  confirmation step. If a world was self-healed, the console will show the
+  `"No world exists at ... Creating it now"` warning — worth checking for
+  once, since it points at exactly which pair had the stale data.
+
 ---
 
 # Definition of Success
@@ -375,9 +469,44 @@ Completed:
   OAuth. The project owner should reload the Growth page in their own
   session to confirm before this is considered fully closed.
 
+**Continued, same session:** a follow-up report — console now clean, but
+World and Growth both stuck on an infinite loading spinner. Treated as a
+loading/data-flow bug, not a render bug, per the report's framing. No new
+feature work done here either.
+
+Completed:
+
+- Traced the full loading lifecycle from `DashboardLayout`'s `attach()` call
+  through `pairs/{pairId}` → `worlds/{worldId}` subscriptions to the
+  `status` field both pages gate on.
+- Found and fixed two real defects that could each independently cause a
+  permanent hang: no error handling anywhere in the `subscribe()` /
+  `subscribeToRange()` chain, and no fallback in `worldStore.attach()` if a
+  subscription never called back at all (success or failure). Added a
+  15-second safety timeout as a hard backstop.
+- Found the specific data problem in this case by inspecting the running
+  dev server's own log (which mirrors real browser console output): no
+  permission errors anywhere, ruling out security rules, pointing instead
+  at a world document that genuinely does not exist at the path being read
+  — almost certainly stale data from before this project's very first
+  `world/` → `worlds/` path fix. Made world creation self-healing in
+  `worldStore` rather than leaving that pair's data permanently orphaned.
+- Gave `DashboardPage` a proper error state — it previously had none.
+- Added `console.info`/`warn`/`error` diagnostics through the whole
+  lifecycle (deliberately not `console.debug`, which Chrome hides by
+  default) and left them in place rather than stripping them.
+- Verified via `npm run build`, `npm run lint`, a full dev server restart
+  (Zustand store singletons don't survive HMR cleanly), and another
+  headless-browser smoke test of the unauthenticated path.
+- Full write-up under "Bug Fixes" above.
+- Again could not confirm in a real signed-in session for the same reason
+  as above.
+
 Next Session:
 
-- Project owner to confirm the Growth page fix in a real signed-in session
+- Project owner to confirm both fixes in a real signed-in session — reload
+  World and Growth, confirm they render (or show a clear error rather than
+  hang), and check the console for the self-heal warning
 - Then resume where Session 2 left off: accessibility audit, performance
   pass, the two open product decisions, personalization scope
 

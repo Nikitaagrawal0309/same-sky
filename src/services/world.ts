@@ -244,8 +244,9 @@ export async function getWorld(worldId: string): Promise<WorldState | null> {
 export function subscribeToWorld(
   worldId: string,
   callback: (world: WorldState | null) => void,
+  onError?: (error: Error) => void,
 ): () => void {
-  return subscribe<WorldState>(PATHS.world(worldId), callback);
+  return subscribe<WorldState>(PATHS.world(worldId), callback, onError);
 }
 
 export async function getWorldHistory(
@@ -263,6 +264,7 @@ export function subscribeToRecentHistory(
   worldId: string,
   callback: (history: Record<DateKey, WorldDaySummary>) => void,
   windowDays: number = WORLD_HISTORY_WINDOW_DAYS,
+  onError?: (error: Error) => void,
 ): () => void {
   const keys = recentDateKeys(windowDays);
 
@@ -271,6 +273,7 @@ export function subscribeToRecentHistory(
     keys[0],
     keys[keys.length - 1],
     callback,
+    onError,
   );
 }
 

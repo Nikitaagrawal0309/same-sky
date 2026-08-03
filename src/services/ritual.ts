@@ -391,14 +391,19 @@ export function subscribeToRitualPlan(
   worldId: string,
   uid: string,
   callback: (plan: RitualPlan) => void,
+  onError?: (error: Error) => void,
 ): () => void {
-  return subscribe<RitualPlan>(PATHS.ritualPlan(worldId, uid), (plan) => {
-    callback(
-      plan && plan.ritualIds?.length
-        ? { ...plan, ritualIds: plan.ritualIds.filter((id) => CATALOGUE_BY_ID.has(id)) }
-        : { uid, ritualIds: [...DEFAULT_RITUAL_IDS], updatedAt: 0 },
-    );
-  });
+  return subscribe<RitualPlan>(
+    PATHS.ritualPlan(worldId, uid),
+    (plan) => {
+      callback(
+        plan && plan.ritualIds?.length
+          ? { ...plan, ritualIds: plan.ritualIds.filter((id) => CATALOGUE_BY_ID.has(id)) }
+          : { uid, ritualIds: [...DEFAULT_RITUAL_IDS], updatedAt: 0 },
+      );
+    },
+    onError,
+  );
 }
 
 /* -------------------------------------------------------------------------
@@ -526,10 +531,15 @@ export function subscribeToDayLedger(
   worldId: string,
   date: string,
   callback: (ledger: DailyRitualLedger) => void,
+  onError?: (error: Error) => void,
 ): () => void {
-  return subscribe<DailyRitualLedger>(PATHS.ritualDay(worldId, date), (ledger) => {
-    callback(ledger ?? {});
-  });
+  return subscribe<DailyRitualLedger>(
+    PATHS.ritualDay(worldId, date),
+    (ledger) => {
+      callback(ledger ?? {});
+    },
+    onError,
+  );
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useProfile } from "../hooks/useAuth";
-import { usePartner, useWorldSnapshot, useWorldState } from "../hooks/useWorld";
+import { usePartner, useWorldSnapshot, useWorldState, useWorldStatus } from "../hooks/useWorld";
 import { useDomainShares, useProgressSeries } from "../hooks/usePlanning";
 import { useWorldStore } from "../store/worldStore";
 import { CompletionChart } from "../components/world/CompletionChart";
@@ -36,6 +36,8 @@ export default function DashboardPage() {
   const partner = usePartner();
   const world = useWorldState();
   const snapshot = useWorldSnapshot();
+  const status = useWorldStatus();
+  const error = useWorldStore((state) => state.error);
   const history = useWorldStore((state) => state.history);
   const domainShares = useDomainShares();
   const practiceRitualIds = useWorldStore(
@@ -43,7 +45,18 @@ export default function DashboardPage() {
   );
   const progressSeries = useProgressSeries(practiceRitualIds);
 
-  if (!world || !snapshot) {
+  if (status === "error") {
+    return (
+      <div className="ss-container py-16">
+        <EmptyState
+          title="Growth couldn't open"
+          description={error ?? "Something interrupted the connection. Refreshing usually helps."}
+        />
+      </div>
+    );
+  }
+
+  if (status === "idle" || status === "loading" || !world || !snapshot) {
     return (
       <div className="grid min-h-[60svh] place-items-center">
         <Spinner label="Gathering your history" />

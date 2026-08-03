@@ -142,19 +142,36 @@ export async function getRange<T>(
  * the shared world, today's rituals, a waiting note. Everything else is read
  * once, because a world that updates constantly is a world that asks to be
  * watched.
+ *
+ * `onError` matters more than it looks. `onValue`'s success callback simply
+ * never fires again once a listener is cancelled (most commonly by a
+ * security-rules rejection) — with no error handling, a caller waiting on
+ * that first callback to flip a loading flag to `false` waits forever, with
+ * nothing in the console louder than a warning easy to miss. Every screen
+ * that shows a loading state from a subscription must be able to escape it,
+ * so this always logs clearly and always gives the caller a chance to do the
+ * same.
  */
 export function subscribe<T>(
   path: string,
   callback: (value: T | null) => void,
+  onError?: (error: Error) => void,
 ): () => void {
-  return onValue(dbRef(path), (snapshot) => {
-    if (!snapshot.exists()) {
-      callback(null);
-      return;
-    }
+  return onValue(
+    dbRef(path),
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        callback(null);
+        return;
+      }
 
-    callback(snapshot.val() as T);
-  });
+      callback(snapshot.val() as T);
+    },
+    (error) => {
+      console.error(`[Same Sky] Realtime read failed at "${path}":`, error);
+      onError?.(error as Error);
+    },
+  );
 }
 
 /**
@@ -165,11 +182,16 @@ export function subscribeToRange<T>(
   startKey: string,
   endKey: string,
   callback: (value: Record<string, T>) => void,
+  onError?: (error: Error) => void,
 ): () => void {
   return onValue(
     query(dbRef(path), orderByKey(), startAt(startKey), endAt(endKey)),
     (snapshot) => {
       callback(snapshot.exists() ? (snapshot.val() as Record<string, T>) : {});
+    },
+    (error) => {
+      console.error(`[Same Sky] Realtime range read failed at "${path}":`, error);
+      onError?.(error as Error);
     },
   );
 }
