@@ -1,0 +1,274 @@
+import { useMemo } from "react";
+import { motion } from "framer-motion";
+import {
+  Bird,
+  Bug,
+  CircleDot,
+  Feather,
+  MoonStar,
+  Rabbit,
+  Sparkles,
+  Squirrel,
+  Turtle,
+  type LucideIcon,
+} from "lucide-react";
+
+import type { WildlifePresence, WorldSnapshot } from "../../types/world";
+import { usePrefersStillness } from "../../hooks/useTheme";
+import { clamp01, cx, seededSequence } from "../../utils/helpers";
+
+/**
+ * The shared world, drawn.
+ *
+ * Everything in this component is shared between both partners — unlike the
+ * sky behind it, which is personal. The tree, garden, pond and any wildlife
+ * present are computed once by `deriveWorld` and rendered here exactly as
+ * given; nothing about growth is decided in this file.
+ *
+ * Positions for flowers and wildlife are derived from `world.worldId` rather
+ * than randomised, so the scene is stable between renders — a garden that
+ * rearranges its flowers on every visit would never come to feel like a real
+ * place.
+ */
+
+const WILDLIFE_ICONS: Record<WildlifePresence["species"], LucideIcon> = {
+  butterflies: Sparkles,
+  bees: Bug,
+  dragonflies: Feather,
+  songbirds: Bird,
+  fireflies: CircleDot,
+  frogs: Turtle,
+  rabbits: Rabbit,
+  deer: Squirrel,
+  owl: MoonStar,
+};
+
+export interface WorldSceneProps {
+  worldId: string;
+  snapshot: WorldSnapshot;
+  className?: string;
+}
+
+export function WorldScene({ worldId, snapshot, className }: WorldSceneProps) {
+  const prefersStillness = usePrefersStillness();
+  const { tree, garden, pond, wildlife } = snapshot;
+
+  const flowers = useMemo(() => {
+    const values = seededSequence(`${worldId}:flowers`, garden.flowers * 3);
+
+    return Array.from({ length: garden.flowers }, (_, index) => ({
+      x: 8 + values[index * 3] * 84,
+      // Kept below the horizon line and out of the pond's footprint.
+      y: 62 + values[index * 3 + 1] * 22,
+      scale: 0.7 + values[index * 3 + 2] * 0.6,
+      hue: index % 3,
+    }));
+  }, [worldId, garden.flowers]);
+
+  const wildlifePositions = useMemo(() => {
+    return wildlife.map((presence, presenceIndex) => {
+      const values = seededSequence(
+        `${worldId}:wildlife:${presence.species}`,
+        presence.count * 2,
+      );
+
+      return Array.from({ length: presence.count }, (_, index) => ({
+        x: 6 + values[index * 2] * 88,
+        y: 8 + values[index * 2 + 1] * 40 + presenceIndex * 2,
+      }));
+    });
+  }, [worldId, wildlife]);
+
+  return (
+    <div
+      className={cx(
+        "relative aspect-[16/11] w-full overflow-hidden rounded-3xl sm:aspect-[16/9]",
+        className,
+      )}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="xMidYMax slice"
+        className="absolute inset-0 size-full"
+        role="img"
+        aria-label="Your shared world"
+      >
+        <defs>
+          <linearGradient id="ss-ground" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--palette-moss-500)" />
+            <stop offset="100%" stopColor="var(--palette-moss-700)" />
+          </linearGradient>
+
+          <radialGradient id="ss-pond" cx="50%" cy="35%" r="75%">
+            <stop offset="0%" stopColor="var(--palette-water-300)" />
+            <stop offset="100%" stopColor="var(--palette-water-600)" />
+          </radialGradient>
+        </defs>
+
+        {/* Ground */}
+        <path
+          d="M0,68 C18,60 34,63 50,65 C66,67 82,60 100,64 L100,100 L0,100 Z"
+          fill="url(#ss-ground)"
+        />
+
+        {/* Undergrowth density, purely textural. */}
+        {garden.undergrowth > 0.15 ? (
+          <path
+            d="M0,72 C20,66 36,70 52,71 C68,72 84,66 100,70 L100,100 L0,100 Z"
+            fill="var(--palette-moss-800)"
+            opacity={clamp01(garden.undergrowth * 0.5)}
+          />
+        ) : null}
+
+        {/* Pond */}
+        <g opacity={0.35 + pond.level * 0.65}>
+          <ellipse
+            cx={76}
+            cy={84}
+            rx={16 + pond.level * 6}
+            ry={5 + pond.level * 2.4}
+            fill="url(#ss-pond)"
+            opacity={0.3 + pond.clarity * 0.5}
+          />
+
+          {Array.from({ length: pond.lilies }).map((_, index) => (
+            <ellipse
+              key={index}
+              cx={68 + index * 3.4}
+              cy={82.5 + (index % 2) * 2.2}
+              rx={1.6}
+              ry={0.9}
+              fill="var(--palette-moss-400)"
+              opacity={0.8}
+            />
+          ))}
+        </g>
+
+        {/* Tree */}
+        <TreeGlyph fullness={tree.fullness} stageIndex={tree.stage.index} />
+
+        {/* Garden */}
+        {flowers.map((flower, index) => (
+          <FlowerGlyph key={index} {...flower} still={prefersStillness} />
+        ))}
+      </svg>
+
+      {/* Wildlife renders as HTML rather than SVG so each creature can use a
+          crisp vector icon and its own gentle motion. */}
+      <div className="absolute inset-0">
+        {wildlife.map((presence, presenceIndex) => {
+          const Icon = WILDLIFE_ICONS[presence.species];
+          const positions = wildlifePositions[presenceIndex] ?? [];
+
+          return positions.map((position, index) => (
+            <motion.span
+              key={`${presence.species}-${index}`}
+              className="absolute text-ink/70 drop-shadow-sm"
+              style={{ left: `${position.x}%`, top: `${position.y}%` }}
+              title={presence.label}
+              animate={
+                prefersStillness
+                  ? undefined
+                  : { y: [0, -3, 0], x: [0, index % 2 === 0 ? 2 : -2, 0] }
+              }
+              transition={{
+                duration: 5 + (index % 3),
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: index * 0.4,
+              }}
+            >
+              <Icon aria-hidden className="size-3.5 sm:size-4" strokeWidth={1.5} />
+            </motion.span>
+          ));
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface TreeGlyphProps {
+  fullness: number;
+  stageIndex: number;
+}
+
+/**
+ * The tree is drawn from a small number of continuous parameters rather than
+ * switched between illustrations per stage, so its growth reads as one long,
+ * gradual transformation instead of eight discrete jumps.
+ */
+function TreeGlyph({ fullness, stageIndex }: TreeGlyphProps) {
+  const height = 8 + fullness * 30;
+  const canopyRadius = 4 + fullness * 13;
+  const trunkWidth = 1 + fullness * 2.2;
+  const baseX = 32;
+  const baseY = 68;
+
+  if (stageIndex === 0) {
+    // A seed is not yet a tree — just a small mound of turned earth.
+    return (
+      <ellipse cx={baseX} cy={baseY} rx={2.4} ry={1} fill="var(--palette-bark-700)" />
+    );
+  }
+
+  return (
+    <g>
+      <rect
+        x={baseX - trunkWidth / 2}
+        y={baseY - height}
+        width={trunkWidth}
+        height={height}
+        rx={trunkWidth / 2}
+        fill="var(--palette-bark-600)"
+      />
+
+      <circle
+        cx={baseX}
+        cy={baseY - height - canopyRadius * 0.55}
+        r={canopyRadius}
+        fill="var(--palette-moss-500)"
+      />
+      <circle
+        cx={baseX - canopyRadius * 0.55}
+        cy={baseY - height - canopyRadius * 0.15}
+        r={canopyRadius * 0.72}
+        fill="var(--palette-moss-600)"
+      />
+      <circle
+        cx={baseX + canopyRadius * 0.6}
+        cy={baseY - height - canopyRadius * 0.1}
+        r={canopyRadius * 0.68}
+        fill="var(--palette-moss-400)"
+      />
+    </g>
+  );
+}
+
+interface FlowerGlyphProps {
+  x: number;
+  y: number;
+  scale: number;
+  hue: number;
+  still: boolean;
+}
+
+const FLOWER_COLOURS = [
+  "var(--palette-bloom-400)",
+  "var(--palette-ember-300)",
+  "var(--palette-paper-0)",
+];
+
+function FlowerGlyph({ x, y, scale, hue, still }: FlowerGlyphProps) {
+  const size = 0.9 * scale;
+
+  return (
+    <g
+      transform={`translate(${x} ${y}) scale(${size})`}
+      className={still ? undefined : "motion-safe:animate-(--animate-breathe)"}
+      style={{ transformOrigin: "center", transformBox: "fill-box" }}
+    >
+      <circle r={0.9} fill={FLOWER_COLOURS[hue]} opacity={0.9} />
+      <circle r={0.35} fill="var(--palette-ember-500)" />
+    </g>
+  );
+}

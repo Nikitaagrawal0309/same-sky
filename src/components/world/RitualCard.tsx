@@ -1,76 +1,114 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 
-interface RitualCardProps {
-  emoji: string;
-  title: string;
-  description: string;
-  onComplete: () => Promise<void>;
+import type { RitualStatus } from "../../types/ritual";
+import { usePrefersStillness } from "../../hooks/useTheme";
+import { cx } from "../../utils/helpers";
+import { RitualIcon } from "../ui/Icon";
+
+/**
+ * One ritual, today.
+ *
+ * Honouring a ritual is the single most frequent action in the product, so it
+ * has to feel unmistakably good without shading into a game mechanic — no
+ * points appear, nothing counts up, and the only feedback is the small warmth
+ * of the card settling into its honoured state.
+ *
+ * Pressing an already-honoured ritual releases it, for the person who tapped
+ * by accident. There is deliberately no separate undo control: the same
+ * gesture that does a thing is what undoes it.
+ */
+
+const ACCENT_CLASSES = {
+  accent: "border-accent/40 bg-accent-soft",
+  water: "border-water/40 bg-water-soft",
+  ember: "border-ember/40 bg-ember-soft",
+  bloom: "border-bloom/40 bg-bloom-soft",
+  dusk: "border-dusk/40 bg-dusk-soft",
+} as const;
+
+export interface RitualCardProps {
+  status: RitualStatus;
+  onHonour: () => Promise<boolean>;
+  onRelease: () => Promise<void>;
+  /** The partner's first name, used only in the "they honoured this too" hint. */
+  partnerName?: string;
 }
 
-export default function RitualCard({
-  emoji,
-  title,
-  description,
-  onComplete,
-}: RitualCardProps) {
-  const [completed, setCompleted] = useState(false);
-  const [loading, setLoading] = useState(false);
+export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualCardProps) {
+  const [isPending, setIsPending] = useState(false);
+  const prefersStillness = usePrefersStillness();
+  const { definition, honouredBySelf, honouredByPartner } = status;
 
-  async function handleClick() {
-    if (completed || loading) return;
+  async function handlePress(): Promise<void> {
+    if (isPending) return;
+
+    setIsPending(true);
 
     try {
-      setLoading(true);
-
-      await onComplete();
-
-      setCompleted(true);
+      if (honouredBySelf) {
+        await onRelease();
+      } else {
+        await onHonour();
+      }
     } finally {
-      setLoading(false);
+      setIsPending(false);
     }
   }
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={completed || loading}
-      className={`w-full rounded-2xl border p-5 text-left transition ${
-        completed
-          ? "border-emerald-600 bg-emerald-900/20"
-          : "border-slate-800 bg-slate-900 hover:border-indigo-500 hover:bg-slate-800"
-      }`}
+    <motion.button
+      type="button"
+      onClick={() => void handlePress()}
+      disabled={isPending}
+      aria-pressed={honouredBySelf}
+      whileTap={prefersStillness ? undefined : { scale: 0.985 }}
+      className={cx(
+        "flex w-full items-center gap-4 rounded-2xl border p-4 text-left",
+        "transition-colors duration-300 ease-(--ease-calm)",
+        "disabled:pointer-events-none",
+        honouredBySelf
+          ? ACCENT_CLASSES[definition.accent]
+          : "border-line bg-surface hover:border-line-strong hover:bg-surface-sunken",
+      )}
     >
-      <div className="flex items-center justify-between">
+      <span
+        className={cx(
+          "grid size-11 shrink-0 place-items-center rounded-full",
+          honouredBySelf ? "bg-surface/70 text-ink" : "bg-surface-sunken text-ink-soft",
+        )}
+      >
+        <RitualIcon name={definition.icon} />
+      </span>
 
-        <div className="flex gap-4">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-medium text-ink">{definition.label}</span>
 
-          <div className="text-4xl">
-            {emoji}
-          </div>
+        <span className="block truncate text-sm text-ink-soft">
+          {honouredByPartner && !honouredBySelf && partnerName
+            ? `${partnerName} already has today.`
+            : definition.description}
+        </span>
+      </span>
 
-          <div>
+      <span
+        aria-hidden
+        className={cx(
+          "grid size-7 shrink-0 place-items-center rounded-full border transition-colors duration-300",
+          honouredBySelf
+            ? "border-transparent bg-ink text-canvas"
+            : "border-line-strong text-transparent",
+        )}
+      >
+        <Check className="size-4" strokeWidth={2.5} />
+      </span>
 
-            <h3 className="text-lg font-semibold text-white">
-              {title}
-            </h3>
-
-            <p className="mt-1 text-sm text-slate-400">
-              {description}
-            </p>
-
-          </div>
-
-        </div>
-
-        <div className="text-2xl">
-          {loading
-            ? "⏳"
-            : completed
-            ? "✨"
-            : "○"}
-        </div>
-
-      </div>
-    </button>
+      {honouredByPartner ? (
+        <span className="sr-only">
+          {partnerName ? `${partnerName} has also honoured this today.` : "Your partner has also honoured this today."}
+        </span>
+      ) : null}
+    </motion.button>
   );
 }

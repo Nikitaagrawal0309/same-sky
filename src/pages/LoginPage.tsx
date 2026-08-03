@@ -1,81 +1,77 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
-import { signInWithGoogle } from "../services/auth";
+import { ROUTES } from "../app/constants";
+import {
+  useAuth,
+  useAuthActions,
+  useAuthError,
+  useIsSigningIn,
+} from "../hooks/useAuth";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
+import AuthLoading from "../components/AuthLoading";
 
+interface LocationState {
+  /** Where the person was headed before they were asked to sign in. */
+  from?: string;
+}
+
+/**
+ * Signing in.
+ *
+ * One button. There is no account to create, no password to remember and
+ * nothing to verify — the sign-in exists to protect a shared world, and every
+ * extra step is a step between two people and theirs.
+ */
 export default function LoginPage() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const { status, isPaired } = useAuth();
+  const { signIn } = useAuthActions();
+  const error = useAuthError();
+  const isSigningIn = useIsSigningIn();
+  const location = useLocation();
 
-  async function handleGoogleLogin() {
-    try {
-      setLoading(true);
+  if (status === "resolving") {
+    return <AuthLoading />;
+  }
 
-      await signInWithGoogle();
+  if (status === "signed-in") {
+    const state = location.state as LocationState | null;
+    const intended = isPaired ? (state?.from ?? ROUTES.world) : ROUTES.pair;
 
-      // Authentication complete.
-      // Pair Detection will later decide whether to
-      // continue to Pair or Shared World.
-      navigate("/pair", {
-        replace: true,
-      });
-    } catch (err) {
-      console.error(err);
-
-      alert("Unable to sign in. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    return <Navigate to={intended} replace />;
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "#f8fafc",
-      }}
-    >
-      <div
-        style={{
-          width: 420,
-          background: "#ffffff",
-          padding: 40,
-          borderRadius: 18,
-          boxShadow: "0 15px 40px rgba(0,0,0,.08)",
-        }}
+    <Card padding="lg" className="motion-safe:animate-(--animate-rise)">
+      <h1 className="text-3xl text-ink">Welcome back</h1>
+
+      <p className="mt-4 leading-relaxed text-ink-soft">
+        Your world is exactly where you left it. Nothing expired while you were
+        away.
+      </p>
+
+      <Button
+        block
+        size="lg"
+        className="mt-10"
+        loading={isSigningIn}
+        loadingLabel="Opening…"
+        onClick={() => void signIn()}
       >
-        <h1>Welcome Back 👋</h1>
+        Continue with Google
+      </Button>
 
-        <p
-          style={{
-            marginTop: 12,
-            marginBottom: 30,
-            color: "#64748b",
-          }}
-        >
-          Continue your journey together.
+      {error ? (
+        <p role="alert" className="mt-5 text-sm leading-relaxed text-ember">
+          {error.message}
         </p>
+      ) : null}
 
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: "14px",
-            border: "none",
-            borderRadius: "12px",
-            background: "#4f46e5",
-            color: "#fff",
-            cursor: loading ? "default" : "pointer",
-            fontWeight: 600,
-          }}
-        >
-          {loading ? "Signing in..." : "Continue with Google"}
-        </button>
-      </div>
-    </div>
+      <p className="mt-8 text-sm leading-relaxed text-ink-faint">
+        Same Sky is built for two people. Signing in creates your half of a
+        shared world — you will be asked to invite the other person, or to
+        accept their invitation, next.
+      </p>
+    </Card>
   );
 }

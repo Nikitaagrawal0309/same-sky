@@ -1,35 +1,26 @@
+import { APP_NAME } from "../app/constants";
+
+/**
+ * The moment before the world appears.
+ *
+ * Shown while a persisted session is being replayed. It is deliberately quiet
+ * and deliberately unhurried: no spinner, no progress bar, nothing that
+ * suggests waiting is a problem. Most of the time it is on screen for a single
+ * frame and nobody sees it at all.
+ */
 export default function AuthLoading() {
   return (
     <div
-      style={{
-        height: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: "#F8FAF8",
-      }}
+      role="status"
+      aria-live="polite"
+      className="grid min-h-svh place-items-center bg-canvas px-6"
     >
-      <div
-        style={{
-          textAlign: "center",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "2rem",
-            marginBottom: "1rem",
-            color: "#2F4F4F",
-          }}
-        >
-          Same Sky
-        </h2>
-
-        <p
-          style={{
-            color: "#666",
-          }}
-        >
-          Preparing your shared world...
+      <div className="text-center">
+        <p className="font-display text-2xl tracking-tight text-ink motion-safe:animate-(--animate-shimmer)">
+          {APP_NAME}
         </p>
+
+        <p className="mt-3 text-sm text-ink-faint">Opening your world…</p>
       </div>
     </div>
   );

@@ -1,18 +1,454 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import "tailwindcss";
+
+/* ==========================================================================
+   Same Sky — Design Foundation
+
+   This file defines the entire visual language of the application.
+   Components should never hardcode colour, radius, shadow or easing values;
+   they should reference the tokens declared here so the product stays
+   consistent as it grows.
+
+   Structure:
+     1. Palette      — raw, theme-independent colour values
+     2. Semantics    — meaning-based variables that flip between themes
+     3. @theme       — exposes semantics to Tailwind as utilities
+     4. Base         — element defaults, focus, motion, scrollbars
+     5. Utilities    — a small set of shared, reusable patterns
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Palette
+
+   Natural, low-saturation colour. Nothing in Same Sky should feel loud.
+   ------------------------------------------------------------------------- */
+
+:root {
+  /* Warm paper neutrals */
+  --palette-paper-0: #ffffff;
+  --palette-paper-50: #faf8f4;
+  --palette-paper-100: #f4f1ea;
+  --palette-paper-200: #e8e4d9;
+  --palette-paper-300: #d6d1c3;
+
+  /* Deep, warm, slightly green charcoals */
+  --palette-bark-950: #0f120d;
+  --palette-bark-900: #171a13;
+  --palette-bark-800: #1f2319;
+  --palette-bark-700: #2a2f22;
+  --palette-bark-600: #3c4232;
+  --palette-bark-500: #5a6049;
+  --palette-bark-400: #7d836c;
+  --palette-bark-300: #a5aa94;
+  --palette-bark-200: #c9ccbb;
+  --palette-bark-100: #e6e8de;
+
+  /* Moss — growth, rituals, the living world */
+  --palette-moss-50: #f1f5ec;
+  --palette-moss-100: #dfe9d5;
+  --palette-moss-200: #c2d4b1;
+  --palette-moss-300: #9fbc88;
+  --palette-moss-400: #7fa267;
+  --palette-moss-500: #63874d;
+  --palette-moss-600: #4d6c3c;
+  --palette-moss-700: #3c5430;
+  --palette-moss-800: #2d3f25;
+  --palette-moss-900: #1f2b19;
+
+  /* Water — the pond, calm, balance */
+  --palette-water-50: #eef5f6;
+  --palette-water-100: #d7e8ea;
+  --palette-water-200: #b0d1d6;
+  --palette-water-300: #85b4bd;
+  --palette-water-400: #6297a3;
+  --palette-water-500: #4a7b88;
+  --palette-water-600: #3b626d;
+  --palette-water-700: #2f4d56;
+  --palette-water-800: #24393f;
+  --palette-water-900: #1a282c;
+
+  /* Ember — warmth, notes, gifts, appreciation */
+  --palette-ember-50: #fdf3ec;
+  --palette-ember-100: #f8e2d1;
+  --palette-ember-200: #f0c3a3;
+  --palette-ember-300: #e39f72;
+  --palette-ember-400: #d4814f;
+  --palette-ember-500: #bd6837;
+  --palette-ember-600: #99512b;
+  --palette-ember-700: #7a4023;
+  --palette-ember-800: #5b301b;
+  --palette-ember-900: #3d2013;
+
+  /* Bloom — flowers, memories, celebration */
+  --palette-bloom-50: #fbf1f3;
+  --palette-bloom-100: #f5dee3;
+  --palette-bloom-200: #eabdc7;
+  --palette-bloom-300: #dc98a8;
+  --palette-bloom-400: #c9788c;
+  --palette-bloom-500: #b25f74;
+  --palette-bloom-600: #8f4c5d;
+  --palette-bloom-700: #723d4b;
+  --palette-bloom-800: #552e38;
+  --palette-bloom-900: #391f26;
+
+  /* Dusk — evening sky, reflection, quiet */
+  --palette-dusk-100: #e5e0ee;
+  --palette-dusk-200: #c8bfdc;
+  --palette-dusk-300: #a698c4;
+  --palette-dusk-400: #8878ab;
+  --palette-dusk-500: #6f5f91;
+  --palette-dusk-600: #594b76;
+  --palette-dusk-700: #443a5c;
+  --palette-dusk-800: #302941;
+  --palette-dusk-900: #1e192a;
 }
 
-html,
-body,
-#root {
-  width: 100%;
-  min-height: 100vh;
+/* -------------------------------------------------------------------------
+   2. Semantics
+
+   Every component reads from these. Switching theme only rewrites this layer.
+   ------------------------------------------------------------------------- */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --ss-canvas: var(--palette-paper-50);
+  --ss-surface: var(--palette-paper-0);
+  --ss-surface-raised: var(--palette-paper-0);
+  --ss-surface-sunken: var(--palette-paper-100);
+
+  --ss-border: var(--palette-paper-200);
+  --ss-border-strong: var(--palette-paper-300);
+
+  --ss-ink: var(--palette-bark-800);
+  --ss-ink-soft: var(--palette-bark-500);
+  --ss-ink-faint: var(--palette-bark-400);
+  --ss-ink-inverse: var(--palette-paper-50);
+
+  --ss-accent: var(--palette-moss-600);
+  --ss-accent-soft: var(--palette-moss-100);
+  --ss-accent-strong: var(--palette-moss-700);
+  --ss-accent-contrast: var(--palette-paper-0);
+
+  --ss-water: var(--palette-water-500);
+  --ss-water-soft: var(--palette-water-100);
+
+  --ss-ember: var(--palette-ember-500);
+  --ss-ember-soft: var(--palette-ember-100);
+
+  --ss-bloom: var(--palette-bloom-500);
+  --ss-bloom-soft: var(--palette-bloom-100);
+
+  --ss-dusk: var(--palette-dusk-500);
+  --ss-dusk-soft: var(--palette-dusk-100);
+
+  --ss-shadow-color: 32 36 26;
+
+  --ss-scrim: rgb(23 26 19 / 0.32);
 }
 
-body {
-  font-family: Inter, Arial, sans-serif;
-  background: #f8fafc;
-  color: #111827;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ss-canvas: var(--palette-bark-950);
+  --ss-surface: var(--palette-bark-900);
+  --ss-surface-raised: var(--palette-bark-800);
+  --ss-surface-sunken: var(--palette-bark-950);
+
+  --ss-border: var(--palette-bark-700);
+  --ss-border-strong: var(--palette-bark-600);
+
+  --ss-ink: var(--palette-bark-100);
+  --ss-ink-soft: var(--palette-bark-300);
+  --ss-ink-faint: var(--palette-bark-400);
+  --ss-ink-inverse: var(--palette-bark-900);
+
+  --ss-accent: var(--palette-moss-300);
+  --ss-accent-soft: var(--palette-moss-900);
+  --ss-accent-strong: var(--palette-moss-200);
+  --ss-accent-contrast: var(--palette-bark-900);
+
+  --ss-water: var(--palette-water-300);
+  --ss-water-soft: var(--palette-water-900);
+
+  --ss-ember: var(--palette-ember-300);
+  --ss-ember-soft: var(--palette-ember-900);
+
+  --ss-bloom: var(--palette-bloom-300);
+  --ss-bloom-soft: var(--palette-bloom-900);
+
+  --ss-dusk: var(--palette-dusk-300);
+  --ss-dusk-soft: var(--palette-dusk-900);
+
+  --ss-shadow-color: 0 0 0;
+
+  --ss-scrim: rgb(6 8 5 / 0.6);
+}
+
+/* -------------------------------------------------------------------------
+   3. Tailwind theme
+
+   `inline` is required so the generated utilities keep referencing the
+   semantic variables above rather than resolving them at build time.
+   Without it, theme switching would not work.
+   ------------------------------------------------------------------------- */
+
+@theme inline {
+  /* Surfaces & text */
+  --color-canvas: var(--ss-canvas);
+  --color-surface: var(--ss-surface);
+  --color-surface-raised: var(--ss-surface-raised);
+  --color-surface-sunken: var(--ss-surface-sunken);
+
+  --color-line: var(--ss-border);
+  --color-line-strong: var(--ss-border-strong);
+
+  --color-ink: var(--ss-ink);
+  --color-ink-soft: var(--ss-ink-soft);
+  --color-ink-faint: var(--ss-ink-faint);
+  --color-ink-inverse: var(--ss-ink-inverse);
+
+  /* Meaningful accents */
+  --color-accent: var(--ss-accent);
+  --color-accent-soft: var(--ss-accent-soft);
+  --color-accent-strong: var(--ss-accent-strong);
+  --color-accent-contrast: var(--ss-accent-contrast);
+
+  --color-water: var(--ss-water);
+  --color-water-soft: var(--ss-water-soft);
+
+  --color-ember: var(--ss-ember);
+  --color-ember-soft: var(--ss-ember-soft);
+
+  --color-bloom: var(--ss-bloom);
+  --color-bloom-soft: var(--ss-bloom-soft);
+
+  --color-dusk: var(--ss-dusk);
+  --color-dusk-soft: var(--ss-dusk-soft);
+
+  /* Typography — display carries the emotional voice, sans carries the UI */
+  --font-display:
+    "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+    "Times New Roman", serif;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
+
+  /* Radii — generous and soft, never sharp */
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2.25rem;
+  --radius-3xl: 3rem;
+
+  /* Elevation — diffuse and quiet, never harsh */
+  --shadow-soft: 0 1px 2px rgb(var(--ss-shadow-color) / 0.04),
+    0 4px 16px rgb(var(--ss-shadow-color) / 0.05);
+  --shadow-lifted: 0 2px 4px rgb(var(--ss-shadow-color) / 0.05),
+    0 12px 32px rgb(var(--ss-shadow-color) / 0.08);
+  --shadow-floating: 0 4px 8px rgb(var(--ss-shadow-color) / 0.06),
+    0 24px 56px rgb(var(--ss-shadow-color) / 0.12);
+
+  /* Motion — everything eases out; nothing snaps or bounces aggressively */
+  --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-breath: cubic-bezier(0.45, 0, 0.55, 1);
+
+  --animate-breathe: breathe 7s var(--ease-breath) infinite;
+  --animate-drift: drift 18s linear infinite;
+  --animate-rise: rise 0.7s var(--ease-settle) both;
+  --animate-fade-in: fade-in 0.5s var(--ease-calm) both;
+  --animate-shimmer: shimmer 2.4s var(--ease-breath) infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.035);
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-2%, 0, 0);
+  }
+  to {
+    transform: translate3d(2%, 0, 0);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   4. Base
+   ------------------------------------------------------------------------- */
+
+@layer base {
+  * {
+    border-color: var(--ss-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--ss-canvas);
+    color: var(--ss-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100svh;
+    transition:
+      background-color 600ms var(--ease-calm),
+      color 600ms var(--ease-calm);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* A single, consistent focus treatment everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--ss-accent);
+    outline-offset: 3px;
+    border-radius: var(--radius-xs);
+  }
+
+  ::selection {
+    background-color: var(--ss-accent-soft);
+    color: var(--ss-ink);
+  }
+
+  /* Inputs inherit the product's typography rather than the browser's. */
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  textarea {
+    field-sizing: content;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--ss-border-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+
+  /*
+    Calm is a feature, and so is stillness. When a person asks their system
+    for less motion, Same Sky honours it globally rather than per component.
+  */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------
+   5. Shared utilities
+   ------------------------------------------------------------------------- */
+
+@layer utilities {
+  /* Content column used by every full-page screen. */
+  .ss-container {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .ss-container {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Screen-reader-only content that becomes visible on focus. */
+  .ss-skip-link {
+    position: absolute;
+    inset-inline-start: 1rem;
+    top: -6rem;
+    z-index: 100;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-md);
+    background-color: var(--ss-surface);
+    color: var(--ss-ink);
+    box-shadow: var(--shadow-floating);
+    transition: top 240ms var(--ease-settle);
+  }
+
+  .ss-skip-link:focus {
+    top: 1rem;
+  }
 }

@@ -1,37 +1,39 @@
-import { Navigate } from "react-router-dom";
-import { useAuthStore } from "../store/authStore";
+import type { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+
+import { ROUTES } from "../app/constants";
+import { useAuth } from "../hooks/useAuth";
+import AuthLoading from "./AuthLoading";
 
 interface Props {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
+/**
+ * A route that requires a shared world.
+ *
+ * Everything the product is actually about — rituals, the journal, memories,
+ * reflections — belongs to a pair. This gate stands in front of all of it:
+ * signed out goes to sign-in, signed in but unpaired goes to pairing, and only
+ * someone with a world gets through.
+ *
+ * `ProtectedRoute` is the weaker guard, for screens a person can reach on
+ * their own before a partner ever arrives.
+ */
 export default function AuthGate({ children }: Props) {
-  const loading = useAuthStore((state) => state.loading);
-  const user = useAuthStore((state) => state.user);
-  const pairId = useAuthStore((state) => state.pairId);
+  const { status, isPaired } = useAuth();
+  const location = useLocation();
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          fontSize: 22,
-          fontWeight: 600,
-        }}
-      >
-        Preparing Your Sky...
-      </div>
-    );
+  if (status === "resolving") {
+    return <AuthLoading />;
   }
 
-  if (!user) {
-    return <Navigate to="/auth/login" replace />;
+  if (status === "signed-out") {
+    return <Navigate to={ROUTES.login} replace state={{ from: location.pathname }} />;
   }
 
-  if (!pairId) {
-    return <Navigate to="/pair" replace />;
+  if (!isPaired) {
+    return <Navigate to={ROUTES.pair} replace />;
   }
 
   return <>{children}</>;

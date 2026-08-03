@@ -1,10 +1,55 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>same-sky</title>
+
+    <title>Same Sky</title>
+    <meta
+      name="description"
+      content="A quiet, shared world for two people growing together. Same Sky turns consistent real-life care into a living world you build side by side."
+    />
+    <meta name="theme-color" content="#faf8f4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f120d" media="(prefers-color-scheme: dark)" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Same Sky" />
+    <meta
+      property="og:description"
+      content="A quiet, shared world for two people growing together."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap"
+    />
+
+    <script>
+      /*
+        Resolve the theme before first paint so returning to Same Sky is never
+        preceded by a flash of the wrong environment. Mirrors the logic in
+        src/services/preferences.ts — keep the storage key in sync.
+      */
+      (function () {
+        try {
+          var stored = localStorage.getItem("same-sky:theme");
+          var theme =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.dataset.theme = theme;
+        } catch (_) {
+          /* Private browsing or blocked storage — the light default stands. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
