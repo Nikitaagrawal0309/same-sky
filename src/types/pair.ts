@@ -11,6 +11,11 @@ export interface Pair {
 
   status: PairStatus;
 
+  /**
+   * Shared world owned by this pair.
+   */
+  worldId: string;
+
   createdAt: number;
 }
 

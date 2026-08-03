@@ -39,12 +39,15 @@ export async function createPair({
     placeholder: true,
   });
 
+  const worldId = pairId;
+
   const pair: Pair = {
     id: pairId,
     inviteCode,
     partnerA: ownerUid,
     partnerB: null,
     status: "pending",
+    worldId,
     createdAt: Date.now(),
   };
 
@@ -88,11 +91,21 @@ export async function joinPair({
 
   if (invite.used) return false;
 
+  if (invite.ownerUid === joiningUid) {
+  throw new Error(
+    "You cannot use your own Sky Link."
+  );
+}
+
   const pair = await getData<Pair>(
     `pairs/${invite.pairId}`
   );
 
   if (!pair) return false;
+
+  if (pair.partnerB) {
+    return false;
+  }
 
   pair.partnerB = joiningUid;
   pair.status = "active";
@@ -116,12 +129,8 @@ export async function joinPair({
     }
   );
 
-  /**
-   * Initial shared world.
-   */
-
   await setData(
-    `world/${invite.pairId}`,
+    `world/${pair.worldId}`,
     {
       tree: {
         stage: 0,

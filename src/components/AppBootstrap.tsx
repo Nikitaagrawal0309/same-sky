@@ -1,30 +1,24 @@
 import { useEffect } from "react";
-import type { ReactNode } from "react";
 
-import AuthLoading from "./AuthLoading";
+import { observeAuthState } from "../services/auth";
 import { useAuthStore } from "../store/authStore";
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-export default function AppBootstrap({
-  children,
-}: Props) {
-  const loading = useAuthStore((state) => state.loading);
-  const initialize = useAuthStore(
-    (state) => state.initialize
-  );
+export default function AppBootstrap({ children }: Props) {
+  const setUser = useAuthStore((state) => state.setUser);
+  const setLoading = useAuthStore((state) => state.setLoading);
 
   useEffect(() => {
-    const unsubscribe = initialize();
+    const unsubscribe = observeAuthState((user) => {
+      setUser(user);
+      setLoading(false);
+    });
 
-    return () => unsubscribe();
-  }, [initialize]);
-
-  if (loading) {
-    return <AuthLoading />;
-  }
+    return unsubscribe;
+  }, [setUser, setLoading]);
 
   return <>{children}</>;
 }

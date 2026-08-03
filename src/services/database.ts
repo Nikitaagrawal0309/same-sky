@@ -1,5 +1,6 @@
 import {
   get,
+  onValue,
   push,
   ref,
   remove,
@@ -16,11 +17,15 @@ import { database } from "./firebase";
  * instead of directly calling the Firebase SDK.
  */
 
-export const dbRef = (path: string): DatabaseReference => {
+export const dbRef = (
+  path: string
+): DatabaseReference => {
   return ref(database, path);
 };
 
-export async function getData<T>(path: string): Promise<T | null> {
+export async function getData<T>(
+  path: string
+): Promise<T | null> {
   const snapshot = await get(dbRef(path));
 
   if (!snapshot.exists()) {
@@ -37,7 +42,9 @@ export async function setData<T>(
   await set(dbRef(path), value);
 }
 
-export async function updateData<T extends object>(
+export async function updateData<
+  T extends object
+>(
   path: string,
   value: Partial<T>
 ): Promise<void> {
@@ -59,4 +66,26 @@ export async function createChild<T>(
   await set(child, value);
 
   return child.key as string;
+}
+
+/**
+ * Listen for realtime changes.
+ * Returns an unsubscribe function.
+ */
+
+export function subscribe<T>(
+  path: string,
+  callback: (value: T | null) => void
+): () => void {
+  return onValue(
+    dbRef(path),
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        callback(null);
+        return;
+      }
+
+      callback(snapshot.val() as T);
+    }
+  );
 }
