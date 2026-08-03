@@ -3,7 +3,7 @@
 # Same Sky
 ## Live Project Status
 
-Last Updated: 2026-08-03
+Last Updated: 2026-08-04
 
 Current Phase:
 Core Product Complete → Personalization, Accessibility & Production Polish Next
@@ -142,6 +142,10 @@ timeline, progress charts) exists and is wired end to end.
 
 # Immediate Next Priority
 
+0. **Confirm the Growth-page infinite-loop fix in a real signed-in session**
+   (see "Bug Fixes" below) — this environment cannot complete Google OAuth,
+   so the fix is verified by root-cause analysis and a full-codebase audit
+   only, not by re-observing the original crash firsthand.
 1. Accessibility audit — keyboard-only pass through every flow, screen
    reader spot-check, colour contrast check against the design tokens in
    `index.css` (light and dark)
@@ -213,6 +217,79 @@ Stable — extend, do not redesign, without strong justification:
 
 ---
 
+# Bug Fixes
+
+## 2026-08-04 — Growth page infinite render loop
+
+**Symptom:** Opening the Growth page crashed the app with "Maximum update
+depth exceeded" and "The result of getSnapshot should be cached to avoid an
+infinite loop," originating at `DashboardPage.tsx` (around line 27) and
+propagating through `router.tsx`.
+
+**Root cause:** `DashboardPage.tsx` selected from the Zustand world store
+with:
+
+```ts
+const practiceRitualIds = useWorldStore((state) => state.ritualPlan?.ritualIds ?? []);
+```
+
+Zustand v5 selectors run through React's `useSyncExternalStore`, which
+compares consecutive `getSnapshot()` results with `Object.is` to decide
+whether a re-render is needed. `state.ritualPlan` is `null` until the
+person's ritual plan has loaded from Firebase — and for as long as it is
+`null`, the `?? []` fallback evaluates on every single call, producing a
+**new array reference every time**. `useSyncExternalStore` saw a
+"different" snapshot on every check, forced a re-render, which called the
+selector again, which produced yet another new array — an infinite loop
+that only a `null` (or otherwise referentially stable) fallback would have
+avoided.
+
+This is a general Zustand/`useSyncExternalStore` trap: a selector's fallback
+must be either a primitive (`null`, `0`, `""`) or a reference held outside
+the selector. It is not specific to ritual plans — any selector of the form
+`store((s) => s.x ?? [])` or `s.x ?? {}` has the same failure mode.
+
+**Fix:** Introduced a module-level constant in `DashboardPage.tsx`:
+
+```ts
+const EMPTY_RITUAL_IDS: RitualId[] = [];
+```
+
+and used it as the fallback instead of an inline `[]`. The constant is
+created once when the module loads, so the selector now returns the exact
+same reference on every call while `ritualPlan` is `null`, and
+`getSnapshot` stabilises correctly.
+
+**Verification performed:**
+
+- Audited every `useAuthStore` / `useUiStore` / `useWorldStore` selector in
+  the codebase (`grep` across `src/`) for the same pattern (inline `?? []`
+  / `?? {}` / object or array literals returned directly from a selector).
+  This was the only instance; the one other `?? null` fallback
+  (`useAuth.ts`, `state.user?.uid ?? null`) is safe because `null` is a
+  primitive and always referentially equal to itself.
+- `npm run build` — passes.
+- `npm run lint` — passes.
+- `npm run dev` — starts cleanly on port 5173.
+- Headless-browser smoke test of the unauthenticated golden path
+  (landing → sign-in) with a 2-second settle and a console-error check —
+  clean, no errors.
+- Code-level review of loading states on World, Growth, Journal, Memories
+  and Timeline: World and Growth gate on `useWorldStore`'s `status` /
+  `world`/`snapshot` fields (all stable, real store values, not inline
+  fallbacks) and resolve once the world subscription reports `"ready"`.
+  Journal, Memories and Timeline have no loading gate at all — they render
+  from a `useState([])` that Firebase's realtime listener fills in, so
+  there is no state that could get stuck.
+- **Not independently re-verified in a real signed-in session** — this
+  environment cannot complete Google OAuth, so the actual authenticated
+  Growth page render (where the bug was originally reported) was not
+  re-observed firsthand. The fix is verified by root-cause analysis, a
+  full-codebase audit for the same defect class, and clean build/lint/dev
+  output; a real sign-in check by the project owner is the remaining step.
+
+---
+
 # Definition of Success
 
 The project is complete when Same Sky delivers:
@@ -272,6 +349,37 @@ Next Session:
   Memories storage at scale) with the project owner before building further
   in those areas
 - Personalization, once its scope is clarified
+
+## Session 3
+
+A regression report came in from a real signed-in session: the Growth page
+caused an infinite render loop ("Maximum update depth exceeded" /
+"getSnapshot should be cached"). No new feature work was done this session
+per the report's own instruction — this was a stop-and-fix.
+
+Completed:
+
+- Found and fixed the root cause: an unstable Zustand selector fallback
+  (`state.ritualPlan?.ritualIds ?? []`) in `DashboardPage.tsx` that produced
+  a new array reference on every call while `ritualPlan` was still `null`.
+  Full write-up under "Bug Fixes" above.
+- Audited every store selector in the codebase for the same defect class;
+  no other instances found.
+- Verified via `npm run build`, `npm run lint`, `npm run dev` (starts
+  cleanly on port 5173), and a headless-browser smoke test of the
+  unauthenticated golden path with a settle delay and console-error check.
+- Reviewed loading-state logic on World, Growth, Journal, Memories and
+  Timeline at the code level; none has a path that can get stuck.
+- Could not re-observe the original crash firsthand or confirm the fix in a
+  real signed-in session — this environment has no way to complete Google
+  OAuth. The project owner should reload the Growth page in their own
+  session to confirm before this is considered fully closed.
+
+Next Session:
+
+- Project owner to confirm the Growth page fix in a real signed-in session
+- Then resume where Session 2 left off: accessibility audit, performance
+  pass, the two open product decisions, personalization scope
 
 ---
 

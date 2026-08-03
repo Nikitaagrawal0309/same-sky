@@ -9,6 +9,20 @@ import { GrowthPeriod } from "../components/world/GrowthPeriod";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { Spinner } from "../components/ui/Icon";
 import { formatPercent } from "../utils/helpers";
+import type { RitualId } from "../types/ritual";
+
+/**
+ * A stable "no practice yet" fallback.
+ *
+ * `state.ritualPlan?.ritualIds ?? []` looks harmless but is not: the `[]`
+ * literal is a new array on every single invocation, so whenever `ritualPlan`
+ * is `null` the store's `getSnapshot` never returns a referentially equal
+ * value twice in a row. `useSyncExternalStore` (what Zustand is built on)
+ * treats that as "the store is still changing" and keeps re-rendering
+ * forever. A module-level constant is stable across renders, so the fallback
+ * itself can never be the reason the snapshot looks different.
+ */
+const EMPTY_RITUAL_IDS: RitualId[] = [];
 
 /**
  * Growth.
@@ -24,7 +38,9 @@ export default function DashboardPage() {
   const snapshot = useWorldSnapshot();
   const history = useWorldStore((state) => state.history);
   const domainShares = useDomainShares();
-  const practiceRitualIds = useWorldStore((state) => state.ritualPlan?.ritualIds ?? []);
+  const practiceRitualIds = useWorldStore(
+    (state) => state.ritualPlan?.ritualIds ?? EMPTY_RITUAL_IDS,
+  );
   const progressSeries = useProgressSeries(practiceRitualIds);
 
   if (!world || !snapshot) {
