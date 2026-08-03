@@ -6,7 +6,7 @@
 Last Updated: 2026-08-03
 
 Current Phase:
-Core Product Complete → Reflection & Planning Systems Next
+Core Product Complete → Personalization, Accessibility & Production Polish Next
 
 Project Status:
 Active Development
@@ -75,8 +75,6 @@ Active Development
   engineering — see Known Issues)
 - ✅ `SettingsPage` (theme, motion, hemisphere, ambient audio + volume, sign
   out) and `ProfilePage` rebuilt on real data
-- ✅ `DashboardPage` ("Growth") — 14-day energy chart, harmony/vitality/
-  lifetime stats, non-competitive per-partner contribution comparison
 
 ### Daily Notes, Journal, Memories
 
@@ -86,28 +84,46 @@ Active Development
   service layer), five non-evaluative moods, full page with composer
 - ✅ Memories — title/story/date/kind, optional photo (downscaled + JPEG-
   encoded client-side to a data URL — see Known Issues), grid page
-- ✅ Routing + navigation extended to include Journal and Memories
 
----
+### Planning, Reflection & Timeline
 
-## Partially Implemented
-
-- 🟡 `DashboardPage` shows real recent-history data but has no weekly/monthly
-  reflection text yet, and no planning UI — that is the next phase
-- 🟡 Memories are not yet reflected onto the world's permanent timeline
-  (`WorldEvent`/timeline type exists; nothing currently writes to it)
+- ✅ `services/planning.ts` — weekly & monthly plans (intentions), each
+  removable only by its own author
+- ✅ Reflection generation (`generateReflection`) — pure function over ritual
+  history, exactly mirroring the "derive, don't store computed state"
+  pattern in `services/world.ts`; nothing about a reflection is persisted, so
+  any past week or month can be regenerated on demand
+- ✅ `GrowthPeriod` component — week/month switcher, live intentions list +
+  composer, generated observations (toned, never judgemental) and a single
+  open-ended invitation
+- ✅ `CompletionChart` — the viewer's own daily completion against their
+  chosen practice, as a percentage (the spec's explicit "chart form, on
+  percentage of completion basis" requirement)
+- ✅ `DomainShareBars` — how recent rituals have spread across body / mind /
+  craft / together
+- ✅ Historical Timeline (`services/timeline.ts`, `TimelinePage`) — a
+  permanent, year-grouped record. Deliberately **not** a log of every ritual
+  (that would be noise); it records world milestones (world created, tree
+  stage crossed — detected by comparing the derived tree stage before/after
+  each ritual write, without storing the stage itself), memories saved, and
+  journal entries written
+- ✅ Routing + navigation extended to include Journal, Memories and Timeline
+  (five destinations total, matching the pre-existing "five and no more"
+  navigation constraint)
 
 ---
 
 ## Not Yet Implemented
 
-- Weekly Planning / Monthly Planning (types exist in `types/planning.ts`;
-  no service or UI yet)
-- Weekly Reflection / Monthly Reflection generation (types exist; no
-  generation logic yet)
-- Historical Timeline screen (`ROUTES` reserves the path; no service or page)
 - AI Reflection (deliberately deferred — see Known Issues)
 - Notifications / daily invitation delivery
+- Personalization beyond theme/motion/hemisphere/ambient audio (no per-user
+  accent colour, no custom vessel/mood sets, etc.)
+- A dedicated accessibility pass beyond what was built in as each component
+  was written (focus management, labels, `aria-live`, reduced motion are all
+  already in place; a systematic audit has not been run)
+- A dedicated performance pass (route-level code splitting, image lazy
+  loading beyond `loading="lazy"` on avatars/memories, bundle analysis)
 - Offline support
 - Automated tests
 - Production analytics/error monitoring
@@ -117,23 +133,44 @@ Active Development
 
 # Current Engineering Goal
 
-Build the Reflection & Planning layer on top of the now-complete ritual and
-world-progression foundation: weekly/monthly intentions, generated
-reflections from stored history, and the historical timeline.
+Personalization, accessibility, performance and production polish on top of
+a now feature-complete product: every system named in the specification
+(shared world, rituals, notes, journal, memories, planning, reflection,
+timeline, progress charts) exists and is wired end to end.
 
 ---
 
 # Immediate Next Priority
 
-1. `services/planning.ts` — create/read weekly & monthly plans (intentions)
-2. Reflection generation — pure function over `WorldDaySummary` history,
-   mirroring the "derive, don't store computed state" pattern already used
-   by `services/world.ts`
-3. `ProgressSeries` / `DomainShare` charts (types already defined in
-   `types/planning.ts`) on the Growth page
-4. Historical Timeline page, fed by `WorldEvent` — and start actually writing
-   to `timeline/{worldId}` from rituals, notes, journal entries and memories
-5. Reflect saved Memories onto the timeline (currently isolated)
+1. Accessibility audit — keyboard-only pass through every flow, screen
+   reader spot-check, colour contrast check against the design tokens in
+   `index.css` (light and dark)
+2. Performance pass — route-level `React.lazy`/code splitting (the bundle is
+   currently one chunk per vendor, not per route), Lighthouse pass
+3. Personalization — worth product input before building further (see
+   "Product Decisions Needed" below)
+4. Decide on and source ambient audio assets, or explicitly decide the
+   product ships silent for now
+5. Decide on Firebase Storage vs. continuing with inline data-URL images for
+   Memories once real photo volume is understood
+
+---
+
+# Product Decisions Needed
+
+These are not engineering blockers — the code paths are ready — but they are
+product calls this pass should not make silently:
+
+- **Ambient audio content.** `services/audio.ts` is complete; it needs
+  `public/audio/day.mp3`, `night.mp3`, `rain.mp3` (or a decision to ship
+  without sound).
+- **Memory photo storage at scale.** Currently client-downscaled data URLs in
+  Realtime Database (no new paid service). If photo volume grows meaningfully,
+  moving to Firebase Storage is a credentialed/billing decision for the
+  project owner.
+- **What "Personalization" means beyond appearance.** The spec lists it as a
+  future system without much detail — worth a short conversation before
+  building it further.
 
 ---
 
@@ -148,6 +185,10 @@ Stable — extend, do not redesign, without strong justification:
 - The design token layer in `src/index.css`
 - The ritual catalogue shape and the world derivation pattern in
   `services/world.ts` (facts stored, snapshot derived)
+- The reflection/timeline pattern in `services/planning.ts` /
+  `services/timeline.ts`: reflections are always generated, never stored;
+  timeline events are written only for genuinely meaningful moments, never
+  per-ritual
 
 ---
 
@@ -155,18 +196,20 @@ Stable — extend, do not redesign, without strong justification:
 
 - **No ambient audio assets.** The playback/cross-fade engine
   (`services/audio.ts`) is complete and silently no-ops if a file is
-  missing; recording or licensing `day.mp3` / `night.mp3` / `rain.mp3` under
-  `public/audio/` is a content decision for the project owner, not something
-  this pass should invent.
+  missing; recording or licensing the three beds is a content decision for
+  the project owner, not something this pass should invent.
 - **Memory photos are stored as inline data URLs in Realtime Database**,
   downscaled to at most 1400px and JPEG-encoded client-side
-  (`services/storage.ts`). This was a deliberate choice to avoid introducing
-  Firebase Storage (a paid/credentialed service change) without approval. It
-  is fine for a meaningful handful of photos; if photo volume grows, moving
-  to object storage is a product/infra decision that needs sign-off, not a
-  silent architecture change.
+  (`services/storage.ts`). Deliberate, to avoid introducing Firebase Storage
+  (a paid/credentialed service change) without approval. Fine for a
+  meaningful handful of photos; revisit if volume grows.
 - `npm audit` reports 2 high-severity advisories in transitive dependencies;
   not yet triaged.
+- `GrowthPeriod` and `useReflection` each independently subscribe to the same
+  plan path (`usePlan` is called in both), so a period screen opens two live
+  listeners on one path instead of one. Not a correctness bug, just an easy
+  future simplification.
+- No `public/audio/*` files exist yet, matching the point above.
 
 ---
 
@@ -206,20 +249,29 @@ Completed:
   garden, pond, wildlife, sky, harmony, vitality)
 - Premium Shared World screen, Settings, Profile, Growth (dashboard) pages
 - Daily Notes, Shared Journal, Memories — services, hooks and pages
-- Verified via `npm run build`, `npm run lint`, and a headless-browser smoke
-  test of the unauthenticated golden path (landing → sign-in), with a
-  console-error check. Authenticated screens (World, Pair, Journal,
-  Memories, Growth) are verified by type-checking and lint only — visual
-  verification requires a real Google sign-in this environment cannot
-  perform.
+- Planning (weekly/monthly intentions) and Reflection generation
+- `CompletionChart` and `DomainShareBars` progress charts on Growth
+- Historical Timeline — service, page, and event writes wired from pairing
+  (world created), the world progression engine (tree stage milestones,
+  detected without storing the stage), journal entries and memories
+- Verified via `npm run build`, `npm run lint`, and repeated headless-browser
+  smoke tests of the unauthenticated golden path (landing → sign-in) after
+  every batch, with a console-error check each time. Authenticated screens
+  (World, Pair, Journal, Memories, Growth, Timeline) are verified by
+  type-checking and lint only — visual verification requires a real Google
+  sign-in this environment cannot perform.
+- Committed as a single checkpoint (`Phase: Foundation, Shared World &
+  Connection Features`); Planning/Reflection/Timeline work is staged for
+  this session's closing commit.
 
 Next Session:
 
-- Build Planning (weekly/monthly intentions) and Reflection generation
-- Build the Historical Timeline and start writing to it
-- Add progress charts (`ProgressSeries`/`DomainShare`) to Growth
-- Personalization, accessibility pass, performance pass, then production
-  polish
+- Accessibility audit (keyboard, screen reader, contrast)
+- Performance pass (route-level code splitting, Lighthouse)
+- Resolve the two open product decisions above (ambient audio content,
+  Memories storage at scale) with the project owner before building further
+  in those areas
+- Personalization, once its scope is clarified
 
 ---
 

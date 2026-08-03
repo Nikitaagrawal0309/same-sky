@@ -3,6 +3,7 @@ import type { JournalEntry, JournalMood } from "../types/journal";
 import { normaliseText, recordToArray } from "../utils/helpers";
 import { validateJournalEntry } from "../utils/validators";
 import { getData, reserveChildKey, setData, subscribe } from "./database";
+import { recordEvent } from "./timeline";
 
 /**
  * The shared journal.
@@ -52,6 +53,15 @@ export async function createJournalEntry({
   };
 
   await setData(PATHS.journalEntry(worldId, id), entry);
+
+  await recordEvent({
+    worldId,
+    type: "journal-entry",
+    uid,
+    title: entry.title ?? "A new page",
+    detail: null,
+    date,
+  });
 
   return entry;
 }

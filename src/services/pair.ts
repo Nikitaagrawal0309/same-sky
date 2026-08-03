@@ -8,6 +8,7 @@ import type {
 import type { UserProfile } from "../types/user";
 import { INVITE_CODE_LENGTH, normaliseInviteCode } from "../utils/validators";
 import { getData, reserveChildKey, setData, subscribe, updateData } from "./database";
+import { recordEvent } from "./timeline";
 import { ensureWorld } from "./world";
 
 /**
@@ -121,6 +122,14 @@ export async function createPair({ ownerUid }: CreatePairPayload): Promise<Pair>
   await ensureWorld(pair.worldId, pairId, [ownerUid]);
 
   await updateData<UserProfile>(PATHS.user(ownerUid), { pairId });
+
+  await recordEvent({
+    worldId: pair.worldId,
+    type: "world-created",
+    uid: ownerUid,
+    title: "Your world began",
+    detail: null,
+  });
 
   return pair;
 }

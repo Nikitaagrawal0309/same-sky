@@ -1,7 +1,11 @@
 import { useProfile } from "../hooks/useAuth";
 import { usePartner, useWorldSnapshot, useWorldState } from "../hooks/useWorld";
+import { useDomainShares, useProgressSeries } from "../hooks/usePlanning";
 import { useWorldStore } from "../store/worldStore";
+import { CompletionChart } from "../components/world/CompletionChart";
+import { DomainShareBars } from "../components/world/DomainShareBars";
 import { EnergyChart } from "../components/world/EnergyChart";
+import { GrowthPeriod } from "../components/world/GrowthPeriod";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { Spinner } from "../components/ui/Icon";
 import { formatPercent } from "../utils/helpers";
@@ -19,6 +23,9 @@ export default function DashboardPage() {
   const world = useWorldState();
   const snapshot = useWorldSnapshot();
   const history = useWorldStore((state) => state.history);
+  const domainShares = useDomainShares();
+  const practiceRitualIds = useWorldStore((state) => state.ritualPlan?.ritualIds ?? []);
+  const progressSeries = useProgressSeries(practiceRitualIds);
 
   if (!world || !snapshot) {
     return (
@@ -51,7 +58,17 @@ export default function DashboardPage() {
       <SectionHeading level={1} title="Growth" description="The last two weeks, at a glance." />
 
       <Card padding="md" className="mt-8">
-        <EnergyChart history={history} />
+        <h2 className="text-lg text-ink">The shared world, recently</h2>
+        <div className="mt-5">
+          <EnergyChart history={history} />
+        </div>
+      </Card>
+
+      <Card padding="md" className="mt-6">
+        <h2 className="text-lg text-ink">Your own completion</h2>
+        <div className="mt-5">
+          <CompletionChart series={progressSeries} />
+        </div>
       </Card>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -89,6 +106,19 @@ export default function DashboardPage() {
           </div>
         </Card>
       ) : null}
+
+      {domainShares.length > 0 ? (
+        <Card padding="md" className="mt-6">
+          <h2 className="text-lg text-ink">Where recent energy has gone</h2>
+          <div className="mt-5">
+            <DomainShareBars shares={domainShares} />
+          </div>
+        </Card>
+      ) : null}
+
+      <div className="mt-6">
+        <GrowthPeriod />
+      </div>
     </div>
   );
 }

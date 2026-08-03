@@ -19,6 +19,7 @@ import JournalPage from "../pages/JournalPage";
 import MemoriesPage from "../pages/MemoriesPage";
 import ProfilePage from "../pages/ProfilePage";
 import SettingsPage from "../pages/SettingsPage";
+import TimelinePage from "../pages/TimelinePage";
 import NotFoundPage from "../pages/NotFoundPage";
 
 /**
@@ -100,6 +101,14 @@ export const router = createBrowserRouter([
         element: (
           <AuthGate>
             <MemoriesPage />
+          </AuthGate>
+        ),
+      },
+      {
+        path: ROUTES.timeline,
+        element: (
+          <AuthGate>
+            <TimelinePage />
           </AuthGate>
         ),
       },

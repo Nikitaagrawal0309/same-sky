@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { BookOpen, CalendarDays, Images, Trees, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, History, Images, Trees, type LucideIcon } from "lucide-react";
 
 import { ROUTES } from "../../app/constants";
 import { cx } from "../../utils/helpers";
@@ -46,6 +46,12 @@ const DESTINATIONS: readonly Destination[] = [
     label: "Memories",
     icon: Images,
     description: "Moments the two of you have kept",
+  },
+  {
+    to: ROUTES.timeline,
+    label: "Timeline",
+    icon: History,
+    description: "The moments that have marked your journey",
   },
 ] as const;
 

@@ -33,6 +33,7 @@ import {
   sum,
 } from "../utils/helpers";
 import { getData, getRange, setData, subscribe, subscribeToRange, transactData } from "./database";
+import { recordEvent } from "./timeline";
 
 /**
  * The World Progression Engine.
@@ -357,8 +358,12 @@ export async function recordRitual({
   const dayWasActive = (previous?.rituals ?? 0) > 0;
   const becameShared = activePartnerCount(previous) < 2 && activePartnerCount(next) >= 2;
 
-  await transactData<WorldState>(PATHS.world(worldId), (current) => {
+  const capturedWorld: { previous: WorldState | null } = { previous: null };
+
+  const nextWorld = await transactData<WorldState>(PATHS.world(worldId), (current) => {
     const world = current ?? createInitialWorld(worldId, worldId, [uid]);
+    capturedWorld.previous = world;
+
     const contribution = world.contributions?.[uid] ?? emptyContribution(uid);
 
     return {
@@ -380,6 +385,42 @@ export async function recordRitual({
       lastActiveDate: laterDate(world.lastActiveDate, date),
       updatedAt: Date.now(),
     };
+  });
+
+  await recordTreeStageMilestone(capturedWorld.previous, nextWorld, date);
+}
+
+/**
+ * Notice a tree stage crossed for the first time, and mark it permanently.
+ *
+ * The tree stage itself is never stored — it is derived fresh from
+ * `totalEnergy` and elapsed days every time the world is opened, exactly like
+ * everything else in this file. This only records the *moment of crossing* as
+ * a one-off timeline entry, which is a fact worth keeping even though the
+ * stage that produced it is recomputed rather than stored.
+ */
+async function recordTreeStageMilestone(
+  previousWorld: WorldState | null,
+  nextWorld: WorldState,
+  date: DateKey,
+): Promise<void> {
+  const ageInDays = Math.max(
+    0,
+    daysBetween(toDateKey(new Date(nextWorld.createdAt)), date),
+  );
+
+  const previousStage = resolveTree(previousWorld?.totalEnergy ?? 0, ageInDays).stage;
+  const nextStage = resolveTree(nextWorld.totalEnergy, ageInDays).stage;
+
+  if (nextStage.index <= previousStage.index) return;
+
+  await recordEvent({
+    worldId: nextWorld.worldId,
+    type: "tree-stage",
+    uid: null,
+    title: nextStage.label,
+    detail: nextStage.meaning,
+    date,
   });
 }
 

@@ -3,6 +3,7 @@ import type { Memory, MemoryImage, MemoryKind } from "../types/memory";
 import { normaliseText, recordToArray } from "../utils/helpers";
 import { validateMemory } from "../utils/validators";
 import { getData, reserveChildKey, setData, subscribe } from "./database";
+import { recordEvent } from "./timeline";
 
 /**
  * Memories.
@@ -55,6 +56,15 @@ export async function saveMemory({
   };
 
   await setData(PATHS.memory(worldId, id), memory);
+
+  await recordEvent({
+    worldId,
+    type: "memory-saved",
+    uid,
+    title: memory.title,
+    detail: memory.story,
+    date,
+  });
 
   return memory;
 }
