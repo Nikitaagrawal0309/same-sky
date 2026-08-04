@@ -17,7 +17,7 @@ import { usePartner } from "../hooks/useWorld";
 import { useProfile } from "../hooks/useAuth";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { formatFullDate } from "../utils/date";
-import { groupBy } from "../utils/helpers";
+import { cx, groupBy } from "../utils/helpers";
 
 /**
  * The historical timeline.
@@ -40,6 +40,34 @@ const EVENT_ICONS: Record<WorldEventType, LucideIcon> = {
   milestone: Star,
 };
 
+/**
+ * A quiet colour per kind of moment — not decoration for its own sake, but
+ * the fastest way to tell a year's shape apart at a glance: how much of it
+ * was growth, how much was kept on purpose, how much was written down.
+ * Deliberately drawn from the same five accents used for ritual domains
+ * elsewhere, so nothing new is introduced to the palette.
+ */
+const EVENT_TONES: Record<WorldEventType, "accent" | "water" | "ember" | "bloom" | "dusk"> = {
+  "world-created": "ember",
+  "ritual-honoured": "accent",
+  "tree-stage": "accent",
+  "wildlife-arrived": "water",
+  "note-left": "ember",
+  "journal-entry": "dusk",
+  "memory-saved": "bloom",
+  "plan-created": "water",
+  "reflection-ready": "dusk",
+  milestone: "bloom",
+};
+
+const TONE_CLASSES: Record<string, string> = {
+  accent: "bg-accent-soft text-accent-strong",
+  water: "bg-water-soft text-water",
+  ember: "bg-ember-soft text-ember",
+  bloom: "bg-bloom-soft text-bloom",
+  dusk: "bg-dusk-soft text-dusk",
+};
+
 export default function TimelinePage() {
   const events = useTimeline();
   const profile = useProfile();
@@ -56,7 +84,7 @@ export default function TimelinePage() {
   const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
 
   return (
-    <div className="ss-container max-w-2xl py-12">
+    <div className="ss-container max-w-2xl py-12 motion-safe:animate-(--animate-fade-in)">
       <SectionHeading
         level={1}
         title="Timeline"
@@ -78,7 +106,13 @@ export default function TimelinePage() {
                   {year}
                 </h2>
 
-                <ul className="mt-4 space-y-3">
+                {/* The connecting thread: a single line behind every marker in
+                    the year, so the list reads as one continuous journey
+                    rather than a stack of unrelated cards. */}
+                {/* left-10 (2.5rem) lines up with the centre of each row's
+                    size-10 icon circle, which sits inside Card's p-5 padding:
+                    20px padding + 20px (half the icon) = 40px from the edge. */}
+                <ul className="relative mt-4 space-y-3 before:absolute before:top-1 before:bottom-1 before:left-10 before:w-px before:bg-line">
                   {byYear[year].map((event) => (
                     <TimelineRow key={event.id} event={event} authorName={nameFor(event.uid)} />
                   ))}
@@ -100,11 +134,17 @@ function TimelineRow({
   authorName: string | null;
 }) {
   const Icon = EVENT_ICONS[event.type];
+  const tone = EVENT_TONES[event.type];
 
   return (
-    <li>
+    <li className="relative">
       <Card padding="sm" className="flex items-start gap-4">
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-sunken text-ink-soft">
+        <span
+          className={cx(
+            "relative z-10 grid size-10 shrink-0 place-items-center rounded-full",
+            TONE_CLASSES[tone],
+          )}
+        >
           <Icon aria-hidden className="size-4.5" strokeWidth={1.5} />
         </span>
 

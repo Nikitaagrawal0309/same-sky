@@ -45,7 +45,7 @@ export default function JournalPage() {
   }
 
   return (
-    <div className="ss-container max-w-2xl py-12">
+    <div className="ss-container max-w-2xl py-12 motion-safe:animate-(--animate-fade-in)">
       <SectionHeading
         level={1}
         title="Journal"
@@ -89,7 +89,7 @@ export default function JournalPage() {
                             type="button"
                             aria-label="Edit this entry"
                             onClick={() => setEditing(entry)}
-                            className="rounded-full p-1.5 text-ink-faint transition-colors hover:bg-surface-sunken hover:text-ink"
+                            className="rounded-full p-1.5 text-ink-faint transition-[color,background-color,transform] hover:bg-surface-sunken hover:text-ink active:scale-90"
                           >
                             <Pencil aria-hidden className="size-4" strokeWidth={1.6} />
                           </button>
@@ -206,7 +206,7 @@ function JournalComposer({ open, entry, onClose, onSubmit }: JournalComposerProp
                 aria-pressed={mood === option.id}
                 onClick={() => setMood(mood === option.id ? null : option.id)}
                 className={cx(
-                  "rounded-full border px-3.5 py-1.5 text-sm transition-colors duration-200 ease-(--ease-calm)",
+                  "rounded-full border px-3.5 py-1.5 text-sm transition-[color,background-color,border-color,transform] duration-200 ease-(--ease-calm) active:scale-95",
                   mood === option.id
                     ? "border-accent/40 bg-accent-soft text-accent-strong"
                     : "border-line text-ink-soft hover:border-line-strong",

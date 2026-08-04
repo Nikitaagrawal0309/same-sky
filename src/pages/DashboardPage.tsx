@@ -1,12 +1,13 @@
 import { RECENT_WINDOW_DAYS } from "../app/constants";
 import { useProfile } from "../hooks/useAuth";
 import { usePartner, useWorldSnapshot, useWorldState, useWorldStatus } from "../hooks/useWorld";
-import { useDomainShares, useProgressSeries } from "../hooks/usePlanning";
+import { useDomainShares, useProgressSeries, useYearlyOverview } from "../hooks/usePlanning";
 import { useWorldStore } from "../store/worldStore";
 import { CompletionChart } from "../components/world/CompletionChart";
 import { DomainShareBars } from "../components/world/DomainShareBars";
 import { EnergyChart } from "../components/world/EnergyChart";
 import { GrowthPeriod } from "../components/world/GrowthPeriod";
+import { YearChart } from "../components/world/YearChart";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { Spinner } from "../components/ui/Icon";
 import { recentDateKeys } from "../utils/date";
@@ -46,6 +47,7 @@ export default function DashboardPage() {
     (state) => state.ritualPlan?.ritualIds ?? EMPTY_RITUAL_IDS,
   );
   const progressSeries = useProgressSeries(practiceRitualIds);
+  const yearlyOverview = useYearlyOverview();
 
   if (status === "error") {
     return (
@@ -90,7 +92,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="ss-container max-w-3xl py-12">
+    <div className="ss-container max-w-3xl py-12 motion-safe:animate-(--animate-fade-in)">
       <SectionHeading level={1} title="Growth" description="The last two weeks, at a glance." />
 
       <Card padding="md" className="mt-8">
@@ -106,6 +108,18 @@ export default function DashboardPage() {
           <CompletionChart series={progressSeries} />
         </div>
       </Card>
+
+      {!yearlyOverview.isLoading && yearlyOverview.points.some((point) => point.rituals > 0) ? (
+        <Card padding="md" className="mt-6">
+          <h2 className="text-lg text-ink">The last year</h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Zoomed all the way out. Slow growth is still growth.
+          </p>
+          <div className="mt-5">
+            <YearChart points={yearlyOverview.points} />
+          </div>
+        </Card>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Harmony" value={formatPercent(snapshot.harmony)} />

@@ -6,7 +6,8 @@
 Last Updated: 2026-08-04
 
 Current Phase:
-Production Polish Complete → Personalization Scope & Content Decisions Next
+Core Pages Finished (World, Growth, Journal, Memories, Timeline) →
+Personalization Scope & Content Decisions Next
 
 Project Status:
 Active Development
@@ -159,6 +160,92 @@ Active Development
 - ✅ Responsive spot-check at 375px/768px/1280px — no horizontal overflow
   found on any checked page
 
+### World Page — final pass (Session 5)
+
+- ✅ Quick-access ambient sound toggle in the hero itself (`Volume2`/
+  `VolumeX`), so the control the specification requires ("always have the
+  ability to adjust or disable environmental sounds") is reachable from
+  where a person is actually hearing the sound, not only buried in Settings
+- ✅ Discoverable hover interaction on the tree, garden and pond: each now
+  carries a native SVG `<title>` (a real tooltip, and a real accessible
+  name for assistive technology) and the tree settles very slightly toward
+  the viewer on hover (motion permitting) — the specification calls the
+  tree "one of the strongest emotional symbols" in the product, so it is
+  the one part of the scene that visibly answers to attention
+- ✅ Gentle entrance transition (`--animate-fade-in`) on the content below
+  the hero, so the page arrives rather than snapping into place — the sky
+  and world scene render instantly (first paint should never wait), only
+  the summary/rituals section beneath fades in
+- ✅ Build clean, lint clean, verified in a headless browser (unauthenticated
+  flow + full lazy-route flow, zero console errors) after this pass
+
+### Growth Page — final pass (Session 5)
+
+- ✅ **`YearChart` / `useYearlyOverview`** — the missing progress-visualization
+  timescale. Everything else on Growth looks at the last two to four weeks;
+  the specification explicitly asks for growth to be visible "at multiple
+  timescales" up through "yearly: major world evolution", and nothing on the
+  page showed that until now. A one-time read (`getWorldHistory`, not a
+  subscription — a year of history does not need a live listener) aggregates
+  the trailing 12 months into a bar per month, styled to match the existing
+  `EnergyChart`/`CompletionChart` language rather than introducing a new one
+- ✅ `GrowthPeriod`'s intentions list had no empty state — an empty `<ul>`
+  with nothing in it if no intentions had been written yet. Added a plain-
+  language message ("Nothing written down for this week yet…") instead of
+  silence
+- ✅ Same gentle entrance transition as World
+- ✅ Build clean, lint clean (including a `react-hooks/set-state-in-effect`
+  violation in the new hook, fixed with the same derived-loading-state
+  pattern already used by `useReflection` rather than an imperative reset),
+  verified in a headless browser after this pass
+
+### Journal Page — final pass (Session 5)
+
+- ✅ Gentle entrance transition, matching World and Growth
+- ✅ Tactile press feedback (`active:scale`) added to the mood picker and the
+  edit button — previously only colour/border changed on interaction, no
+  motion at all
+- ✅ Deliberately did **not** colour-code mood by tone (e.g. red for
+  "heavy"). Considered it for visual hierarchy, decided against it: the
+  product philosophy is explicit that a person should never feel judged,
+  and a colour gradient across moods quietly implies some are better than
+  others in exactly the way "heavy" is written not to be. All five moods
+  keep equal visual weight
+- ✅ Build clean, lint clean, verified in a headless browser after this pass
+
+### Memories Page — final pass (Session 5)
+
+- ✅ **Fixed a real missing feature, not just polish**: a memory's story was
+  captured on save and then had nowhere to ever be read again — `MemoryTile`
+  only ever showed title, kind and date. Added a `MemoryDetail` dialog:
+  clicking a tile now opens the full photo and story. Without this, writing
+  a story while saving a memory was pointless — it was written once and
+  permanently invisible afterward
+- ✅ Made the grid tiles feel like the interactive, openable things they now
+  are: a hover lift, a press-down on tap, and a shadow that lifts on hover
+  (previously flat cards with no affordance that they did anything)
+- ✅ `lg:grid-cols-4` added so the grid uses wide-screen space better instead
+  of stopping at 3 columns
+- ✅ Same tactile press feedback added to the memory-kind picker as Journal's
+  mood picker, for consistency
+- ✅ Gentle entrance transition, matching every other page this session
+- ✅ Build clean, lint clean, verified in a headless browser after this pass
+
+### Timeline Page — final pass (Session 5)
+
+- ✅ Actual timeline visual language, not just a plain list: a connecting
+  thread runs behind each year's entries (a hairline between markers, only
+  visible in the gaps between cards since the cards' own background covers
+  it where they sit — the years now read as one continuous line through
+  time rather than a stack of unrelated cards)
+- ✅ Colour-differentiated event markers: each of the ten event types now
+  gets one of the same five accent tones already used for ritual domains
+  elsewhere (nothing new added to the palette) — makes a year's shape
+  scannable at a glance (how much growth, how many kept moments, how much
+  was written down) instead of every icon sitting on identical grey
+- ✅ Gentle entrance transition, matching every other page this session
+- ✅ Build clean, lint clean, verified in a headless browser after this pass
+
 ---
 
 ## Not Yet Implemented
@@ -197,13 +284,16 @@ make silently, or a content asset (audio recordings) this pass cannot create.
 
 # Immediate Next Priority
 
-0. **Confirm every fix in "Bug Fixes" below in a real signed-in session** —
+0. **Confirm every fix and Session 5 addition in a real signed-in session** —
    this environment cannot complete Google OAuth, so nothing authenticated
-   (World, Growth, the contrast fixes, the new chime/weather/celebration
-   features) has been seen firsthand by a human yet. Load World and Growth;
-   honour a ritual and listen/watch for the chime and sparkle; check the
-   Growth stat grid reads "X rituals" rather than a bare number; on a rainy
-   day for that world, confirm rain renders and the ambient bed switches.
+   has been seen firsthand by a human yet. Worth specifically checking: the
+   World hero's sound toggle actually mutes/unmutes; hovering the tree shows
+   its tooltip and settles slightly; Growth's new "The last year" card
+   renders a sensible 12-month bar chart; clicking a Memories tile opens the
+   new detail dialog with its story; Timeline's connecting line and coloured
+   markers render correctly; honour a ritual and listen/watch for the chime
+   and sparkle; on a rainy day for that world, confirm rain renders and the
+   ambient bed switches.
 1. Resolve the "Product Decisions Needed" below with the project owner —
    none of them block further engineering, but this pass should not guess
    at them
@@ -696,6 +786,61 @@ Next Session:
 - Resolve the standing "Product Decisions Needed" list
 - Automated tests are worth prioritizing next, ahead of further features,
   now that the surface area is this large
+
+## Session 5
+
+Instructed to stop auditing and continue implementing production features
+continuously, page by page, in a fixed priority order: World, then Growth,
+then Journal, then Memories, then Timeline — running a build and a browser
+check after each one and updating this file immediately, without stopping
+after a single page.
+
+Completed, one page at a time, each verified with `npm run build` +
+`npm run lint` (clean every time) + a headless-browser check immediately
+after that page before moving to the next:
+
+- **World**: a quick-access ambient-sound toggle in the hero itself (the
+  specification's audio-control requirement was previously reachable only
+  through Settings); native-tooltip hover interaction on the tree, garden
+  and pond, with the tree settling slightly toward the viewer; a gentle
+  entrance transition on the content below the hero
+- **Growth**: `YearChart`/`useYearlyOverview` — a trailing-12-month bar
+  chart, the "yearly: major world evolution" timescale the specification
+  asks for that nothing on the page showed until now (a one-time read, not
+  a subscription); an empty-state message for `GrowthPeriod`'s intentions
+  list, which previously rendered nothing at all when empty; matching
+  entrance transition
+- **Journal**: tactile press feedback on the mood picker and edit button;
+  deliberately did *not* colour-code mood by tone after considering it, to
+  avoid quietly implying some moods are better than others; matching
+  entrance transition
+- **Memories**: found and fixed a real missing feature while reading the
+  page, not just polish — a memory's story was captured on save and then
+  permanently unreachable, since `MemoryTile` only ever showed title/kind/
+  date. Added a `MemoryDetail` dialog opened by clicking a tile. Also gave
+  the grid tiles hover/press affordance they previously lacked entirely,
+  added `lg:grid-cols-4`, and matched the entrance transition
+- **Timeline**: real timeline visual language instead of a plain list — a
+  connecting thread behind each year's markers, and colour-differentiated
+  event icons drawn from the same five tones already used for ritual
+  domains (nothing new added to the palette); matching entrance transition
+
+This file was updated after each individual page, not only at the end, per
+the session's instruction.
+
+Not done, and why: everything under "Not Yet Implemented" below is
+unchanged from Session 4 — none of it was in scope for this session's fixed
+priority list, and the reasons already on record (credentials, product
+decisions, content this pass cannot create) still hold.
+
+Next Session:
+
+- Project owner to confirm all of Session 5's additions in a real signed-in
+  session — see the updated "Immediate Next Priority" item 0 for the
+  specific things worth checking
+- Resolve the standing "Product Decisions Needed" list
+- Automated tests remain the next priority once product decisions are
+  resolved
 
 ---
 

@@ -150,7 +150,9 @@ export function WorldScene({
         ) : null}
 
         {/* Pond */}
-        <g opacity={0.35 + pond.level * 0.65}>
+        <g opacity={0.35 + pond.level * 0.65} className="cursor-default">
+          <title>The pond. Peace and balance, not achievement — it answers to how together your growth has been.</title>
+
           <ellipse
             cx={76}
             cy={84}
@@ -196,12 +198,22 @@ export function WorldScene({
         </g>
 
         {/* Tree */}
-        <TreeGlyph fullness={tree.fullness} stageIndex={tree.stage.index} />
+        <TreeGlyph
+          fullness={tree.fullness}
+          stageIndex={tree.stage.index}
+          label={tree.stage.label}
+          meaning={tree.stage.meaning}
+          still={prefersStillness}
+        />
 
         {/* Garden */}
-        {flowers.map((flower, index) => (
-          <FlowerGlyph key={index} {...flower} still={prefersStillness} />
-        ))}
+        <g className="cursor-default">
+          <title>The garden. Grown by the combined consistency of both of you.</title>
+
+          {flowers.map((flower, index) => (
+            <FlowerGlyph key={index} {...flower} still={prefersStillness} />
+          ))}
+        </g>
       </svg>
 
       {/* Wildlife renders as HTML rather than SVG so each creature can use a
@@ -262,29 +274,50 @@ export function WorldScene({
 interface TreeGlyphProps {
   fullness: number;
   stageIndex: number;
+  label: string;
+  meaning: string;
+  still: boolean;
 }
 
 /**
  * The tree is drawn from a small number of continuous parameters rather than
  * switched between illustrations per stage, so its growth reads as one long,
  * gradual transformation instead of eight discrete jumps.
+ *
+ * The specification calls the tree "one of the strongest emotional symbols"
+ * in the product, so it is the one part of the scene that answers to a
+ * hover: a native `<title>` names its stage and what that stage means, and
+ * (motion permitting) it settles slightly toward the viewer, the same small
+ * acknowledgement `whileTap` gives a pressed button elsewhere.
  */
-function TreeGlyph({ fullness, stageIndex }: TreeGlyphProps) {
+function TreeGlyph({ fullness, stageIndex, label, meaning, still }: TreeGlyphProps) {
   const height = 8 + fullness * 30;
   const canopyRadius = 4 + fullness * 13;
   const trunkWidth = 1 + fullness * 2.2;
   const baseX = 32;
   const baseY = 68;
 
+  const tooltip = `${label}. ${meaning}`;
+
   if (stageIndex === 0) {
     // A seed is not yet a tree — just a small mound of turned earth.
     return (
-      <ellipse cx={baseX} cy={baseY} rx={2.4} ry={1} fill="var(--palette-bark-700)" />
+      <g className="cursor-default">
+        <title>{tooltip}</title>
+        <ellipse cx={baseX} cy={baseY} rx={2.4} ry={1} fill="var(--palette-bark-700)" />
+      </g>
     );
   }
 
   return (
-    <g>
+    <motion.g
+      className="cursor-default"
+      whileHover={still ? undefined : { scale: 1.025 }}
+      transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+      style={{ transformOrigin: `${baseX}px ${baseY}px` }}
+    >
+      <title>{tooltip}</title>
+
       <rect
         x={baseX - trunkWidth / 2}
         y={baseY - height}
@@ -312,7 +345,7 @@ function TreeGlyph({ fullness, stageIndex }: TreeGlyphProps) {
         r={canopyRadius * 0.68}
         fill="var(--palette-moss-400)"
       />
-    </g>
+    </motion.g>
   );
 }
 

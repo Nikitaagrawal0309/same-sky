@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Volume2, VolumeX } from "lucide-react";
 
 import { useProfile } from "../hooks/useAuth";
 import {
@@ -16,6 +16,7 @@ import {
 import { useWorldStore } from "../store/worldStore";
 import { useUiStore } from "../store/uiStore";
 import { useAmbientAudio } from "../hooks/useAmbientAudio";
+import { useAppearanceControls } from "../hooks/useTheme";
 import { RITUAL_CATALOGUE } from "../services/ritual";
 import { deriveWeather } from "../services/world";
 import { Button } from "../components/ui/Button";
@@ -56,6 +57,7 @@ export default function WorldPage() {
   const [pulseSignal, setPulseSignal] = useState(0);
   const updatePractice = useWorldStore((state) => state.updatePractice);
   const { celebration, dismiss } = useTreeStageCelebration(world?.worldId, snapshot?.tree.stage);
+  const { preferences, update: updatePreferences } = useAppearanceControls();
 
   const weather = useMemo(
     () => (world ? deriveWeather(world.worldId, now, hemisphere) : "clear"),
@@ -117,6 +119,25 @@ export default function WorldPage() {
           className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/55 to-transparent"
         />
 
+        <div className="ss-container absolute inset-x-0 top-6">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => void updatePreferences({ ambientAudio: !preferences.ambientAudio })}
+              aria-pressed={preferences.ambientAudio}
+              aria-label={preferences.ambientAudio ? "Turn off ambient sound" : "Turn on ambient sound"}
+              title={preferences.ambientAudio ? "Turn off ambient sound" : "Turn on ambient sound"}
+              className="grid size-10 place-items-center rounded-full bg-black/30 text-white/85 backdrop-blur-sm transition-colors hover:bg-black/45 hover:text-white"
+            >
+              {preferences.ambientAudio ? (
+                <Volume2 aria-hidden className="size-4.5" strokeWidth={1.6} />
+              ) : (
+                <VolumeX aria-hidden className="size-4.5" strokeWidth={1.6} />
+              )}
+            </button>
+          </div>
+        </div>
+
         <div className="ss-container absolute inset-x-0 bottom-0 pb-8">
           <p className="text-sm font-medium tracking-[0.18em] text-white/75 uppercase">
             {sky.label}
@@ -139,7 +160,7 @@ export default function WorldPage() {
         </div>
       </div>
 
-      <div className="ss-container mt-10 space-y-12">
+      <div className="ss-container mt-10 space-y-12 motion-safe:animate-(--animate-fade-in)">
         <WorldSummary world={world} snapshot={snapshot} />
 
         {hasPartner ? (

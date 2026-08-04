@@ -91,6 +91,13 @@ export function GrowthPeriod() {
       <div className="mt-5">
         <p className="text-sm font-medium text-ink-soft">What you're tending to</p>
 
+        {intentions.length === 0 ? (
+          <p className="mt-3 text-sm text-ink-faint">
+            Nothing written down for {period === "week" ? "this week" : "this month"} yet —
+            add something below, or let it stay open.
+          </p>
+        ) : null}
+
         <ul className="mt-3 space-y-2">
           {intentions.map((intention) => (
             <li

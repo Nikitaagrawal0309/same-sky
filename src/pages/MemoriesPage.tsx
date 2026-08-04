@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { ImagePlus, Images } from "lucide-react";
 
 import type { Memory, MemoryImage, MemoryKind } from "../types/memory";
@@ -6,12 +7,13 @@ import { MEMORY_KINDS } from "../types/memory";
 import { useMemories } from "../hooks/useMemories";
 import { playChime } from "../services/audio";
 import { prepareMemoryImage } from "../services/storage";
+import { usePrefersStillness } from "../hooks/useTheme";
 import { validateImageFile, validateMemory } from "../utils/validators";
 import { Button } from "../components/ui/Button";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { Dialog } from "../components/ui/Dialog";
 import { TextAreaField, TextField } from "../components/ui/Field";
-import { formatRelativeDay, todayKey } from "../utils/date";
+import { formatFullDate, formatRelativeDay, todayKey } from "../utils/date";
 import { cx } from "../utils/helpers";
 
 /**
@@ -23,9 +25,10 @@ import { cx } from "../utils/helpers";
 export default function MemoriesPage() {
   const { memories, save } = useMemories();
   const [composerOpen, setComposerOpen] = useState(false);
+  const [viewing, setViewing] = useState<Memory | null>(null);
 
   return (
-    <div className="ss-container max-w-3xl py-12">
+    <div className="ss-container max-w-3xl py-12 motion-safe:animate-(--animate-fade-in)">
       <SectionHeading
         level={1}
         title="Memories"
@@ -42,46 +45,100 @@ export default function MemoriesPage() {
             action={<Button onClick={() => setComposerOpen(true)}>Save your first memory</Button>}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {memories.map((memory) => (
-              <MemoryTile key={memory.id} memory={memory} />
+              <MemoryTile key={memory.id} memory={memory} onOpen={() => setViewing(memory)} />
             ))}
           </div>
         )}
       </div>
 
       <MemoryComposer open={composerOpen} onClose={() => setComposerOpen(false)} onSave={save} />
+
+      <MemoryDetail memory={viewing} onClose={() => setViewing(null)} />
     </div>
   );
 }
 
-function MemoryTile({ memory }: { memory: Memory }) {
+function MemoryTile({ memory, onOpen }: { memory: Memory; onOpen: () => void }) {
   const kind = MEMORY_KINDS.find((candidate) => candidate.id === memory.kind);
+  const prefersStillness = usePrefersStillness();
 
   return (
-    <Card padding="none" className="overflow-hidden">
-      <div className="aspect-square bg-surface-sunken">
-        {memory.image ? (
-          <img
-            src={memory.image.data}
-            alt=""
-            loading="lazy"
-            className="size-full object-cover"
-          />
-        ) : (
-          <div className="grid size-full place-items-center text-ink-faint">
-            <Images aria-hidden className="size-8" strokeWidth={1.2} />
-          </div>
-        )}
-      </div>
+    <motion.button
+      type="button"
+      onClick={onOpen}
+      whileHover={prefersStillness ? undefined : { y: -3 }}
+      whileTap={prefersStillness ? undefined : { scale: 0.98 }}
+      transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+      className="text-left"
+    >
+      <Card
+        padding="none"
+        className="overflow-hidden shadow-soft transition-shadow duration-300 hover:shadow-lifted"
+      >
+        <div className="aspect-square bg-surface-sunken">
+          {memory.image ? (
+            <img
+              src={memory.image.data}
+              alt=""
+              loading="lazy"
+              className="size-full object-cover"
+            />
+          ) : (
+            <div className="grid size-full place-items-center text-ink-faint">
+              <Images aria-hidden className="size-8" strokeWidth={1.2} />
+            </div>
+          )}
+        </div>
 
-      <div className="p-3">
-        <p className="truncate text-sm text-ink">{memory.title}</p>
-        <p className="mt-0.5 text-xs text-ink-faint">
-          {kind?.label} · {formatRelativeDay(memory.date)}
-        </p>
-      </div>
-    </Card>
+        <div className="p-3">
+          <p className="truncate text-sm text-ink">{memory.title}</p>
+          <p className="mt-0.5 text-xs text-ink-faint">
+            {kind?.label} · {formatRelativeDay(memory.date)}
+          </p>
+        </div>
+      </Card>
+    </motion.button>
+  );
+}
+
+/**
+ * A memory, in full.
+ *
+ * The one thing the grid tile can never show: the story behind it, if there
+ * is one. Without this, a story typed in while saving a memory would have
+ * nowhere to ever be read again.
+ */
+function MemoryDetail({ memory, onClose }: { memory: Memory | null; onClose: () => void }) {
+  const kind = memory ? MEMORY_KINDS.find((candidate) => candidate.id === memory.kind) : undefined;
+
+  return (
+    <Dialog
+      open={memory !== null}
+      onClose={onClose}
+      title={memory?.title ?? ""}
+      description={memory ? `${kind?.label} · ${formatFullDate(memory.date)}` : undefined}
+      size="lg"
+    >
+      {memory ? (
+        <div className="space-y-5">
+          {memory.image ? (
+            <img
+              src={memory.image.data}
+              alt=""
+              className="max-h-[60svh] w-full rounded-2xl object-cover"
+            />
+          ) : null}
+
+          {memory.story ? (
+            <p className="leading-relaxed whitespace-pre-wrap text-ink-soft">{memory.story}</p>
+          ) : (
+            <p className="text-sm text-ink-faint">No story was written for this one — just the moment itself.</p>
+          )}
+        </div>
+      ) : null}
+    </Dialog>
   );
 }
 
@@ -199,7 +256,7 @@ function MemoryComposer({ open, onClose, onSave }: MemoryComposerProps) {
           type="button"
           onClick={() => fileInput.current?.click()}
           aria-label={image ? "Change photo" : undefined}
-          className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed border-line-strong bg-surface-sunken"
+          className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed border-line-strong bg-surface-sunken transition-colors hover:border-accent/50"
         >
           {image ? (
             <img src={image.data} alt="" className="size-full object-cover" />
@@ -233,7 +290,7 @@ function MemoryComposer({ open, onClose, onSave }: MemoryComposerProps) {
               aria-pressed={kind === option.id}
               onClick={() => setKind(option.id)}
               className={cx(
-                "rounded-full border px-3.5 py-1.5 text-sm transition-colors duration-200 ease-(--ease-calm)",
+                "rounded-full border px-3.5 py-1.5 text-sm transition-[color,background-color,border-color,transform] duration-200 ease-(--ease-calm) active:scale-95",
                 kind === option.id
                   ? "border-accent/40 bg-accent-soft text-accent-strong"
                   : "border-line text-ink-soft hover:border-line-strong",

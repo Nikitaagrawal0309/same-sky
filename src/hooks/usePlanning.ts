@@ -13,7 +13,9 @@ import {
   subscribeToPlan,
 } from "../services/planning";
 import { getRitualEntriesBetween } from "../services/ritual";
-import { addDaysToKey, periodRange } from "../utils/date";
+import { getWorldHistory } from "../services/world";
+import { addDaysToKey, formatMonthName, periodRange, toMonthKey, todayKey } from "../utils/date";
+import { round } from "../utils/helpers";
 import { useWorldStore } from "../store/worldStore";
 import { useUid } from "./useAuth";
 
@@ -175,4 +177,90 @@ export function useDomainShares(days = 30) {
   }, [pair?.worldId, start, end]);
 
   return useMemo(() => buildDomainShares(entries), [entries]);
+}
+
+export interface MonthlyOverviewPoint {
+  monthKey: string;
+
+  /** "Jan", "Feb" — short, so twelve of them fit one row. */
+  label: string;
+
+  rituals: number;
+
+  energy: number;
+
+  isCurrent: boolean;
+}
+
+/**
+ * Rituals honoured per month, for the trailing `months` — the specification's
+ * "yearly: major world evolution" and "monthly: larger environmental
+ * changes" timescales, which nothing else on Growth shows. Everything else
+ * on the page looks at the last two or four weeks; this is the one place a
+ * pair can see a whole year of their own shape.
+ *
+ * A one-time read (`getWorldHistory`), not a subscription — a year of
+ * history changes slowly enough that watching it live would cost far more
+ * than it is ever worth.
+ */
+export function useYearlyOverview(months = 12) {
+  const pair = useWorldStore((state) => state.pair);
+
+  const [points, setPoints] = useState<MonthlyOverviewPoint[]>([]);
+  // Tracks which world the loaded `points` actually belong to, so loading
+  // state is derived by comparison rather than reset with a synchronous
+  // setState at the top of the effect.
+  const [loadedWorldId, setLoadedWorldId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pair?.worldId) return;
+
+    let cancelled = false;
+
+    const today = new Date();
+    const currentMonthKey = toMonthKey(today);
+
+    // One buffer day past the first of the earliest month, so that month's
+    // 1st is safely inside the read range regardless of time zone rounding.
+    const start = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1);
+    const startKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
+
+    void getWorldHistory(pair.worldId, startKey, todayKey()).then((history) => {
+      if (cancelled) return;
+
+      const byMonth = new Map<string, { rituals: number; energy: number }>();
+
+      for (const [date, day] of Object.entries(history)) {
+        const monthKey = date.slice(0, 7);
+        const bucket = byMonth.get(monthKey) ?? { rituals: 0, energy: 0 };
+
+        bucket.rituals += day.rituals;
+        bucket.energy += day.energy;
+        byMonth.set(monthKey, bucket);
+      }
+
+      const result: MonthlyOverviewPoint[] = Array.from({ length: months }, (_, index) => {
+        const monthDate = new Date(today.getFullYear(), today.getMonth() - (months - 1 - index), 1);
+        const monthKey = toMonthKey(monthDate);
+        const bucket = byMonth.get(monthKey);
+
+        return {
+          monthKey,
+          label: formatMonthName(monthKey).split(" ")[0].slice(0, 3),
+          rituals: bucket?.rituals ?? 0,
+          energy: round(bucket?.energy ?? 0),
+          isCurrent: monthKey === currentMonthKey,
+        };
+      });
+
+      setPoints(result);
+      setLoadedWorldId(pair.worldId);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pair?.worldId, months]);
+
+  return { points, isLoading: loadedWorldId !== pair?.worldId };
 }
