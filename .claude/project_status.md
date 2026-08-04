@@ -14,6 +14,226 @@ Active Development
 
 ---
 
+# Engineering Handoff (Read This First)
+
+Session 5 closed here because of an approaching context limit, not because
+the work ran out. The repository is in a clean, verified, committed state —
+`git status` is empty, `npm run build` and `npm run lint` both pass, and a
+real signed-in browser session was observed live in the dev server log
+during closing verification, hitting `WorldPage` repeatedly with zero
+errors (only the expected, already-documented "ambient audio not available"
+warning). Everything below this section is full historical detail; this
+section is the complete summary a new session needs to continue without
+reading the rest first.
+
+## Features completed
+
+Every system named in `overview_and_specification.md` is implemented and
+wired end to end: authentication/pairing, the Ritual Engine (23 categories),
+the World Progression Engine (tree/garden/pond/wildlife/sky/weather),
+immediate feedback (synthesised chimes + visual responses), Daily Notes,
+Shared Journal, Memories (including a detail view for a memory's story —
+added this session), Planning, Reflection, the Historical Timeline (with
+real timeline visual language — added this session), and progress
+visualization at daily/weekly/monthly/yearly timescales (the yearly view,
+`YearChart`, was the one missing timescale and was added this session). See
+"Overall Progress" below for the full itemised list by area.
+
+## Features partially completed
+
+- **Ambient audio.** The full engine — cross-fade playback, per-time-of-day
+  and per-weather bed selection, volume control, a hero-level quick toggle —
+  is complete. The three `.mp3` files it plays (`day`, `night`, `rain`)
+  do not exist in `public/audio/`. This is a content decision, covered
+  under "Remaining ambient audio implementation" below.
+- **Memories storage.** Fully functional (save, view, detail dialog) using
+  client-downscaled data URLs in Realtime Database. This works today and
+  needs no further engineering; it is "partial" only in the sense that it
+  has a known scaling ceiling — see "Known Issues".
+- **AI Reflection.** The specification's five behavioural requirements
+  (summarise, organise, reflect, identify positive patterns, encourage
+  growth) are met by a deterministic pattern-analysis engine
+  (`generateReflection` in `services/planning.ts`). No actual model/LLM is
+  wired in — see "Remaining features".
+
+## Remaining features
+
+- AI Reflection using an actual model (needs API credentials this pass
+  cannot add unilaterally)
+- Notifications / daily invitation delivery (needs push infrastructure and
+  a service worker; also sits close to the philosophy's "never feel
+  pressured" boundary — worth a product conversation before building)
+- Personalization beyond theme/motion/hemisphere/ambient audio (scope
+  undefined in the spec — see "Product Decisions Needed")
+- Offline support
+- Automated tests (none exist yet — see "Technical debt")
+- Production analytics/error monitoring
+
+## Remaining engineering tasks
+
+- `GrowthPeriod` and `useReflection` each independently subscribe to the
+  same plan path (`usePlan` is called in both) — one screen opens two live
+  listeners on one path instead of one. Not a correctness bug, easy fix.
+- `npm audit` reports 2 high-severity advisories in transitive dependencies;
+  not yet triaged (run `npm audit` for current detail — versions may have
+  shifted since this was last checked).
+- No automated tests at any level (unit, integration, or end-to-end).
+
+## Remaining UI work
+
+- No dedicated "view all memories" pagination/filter — fine at current
+  scale, worth revisiting if a pair accumulates hundreds of memories.
+- No web app manifest (`public/` has `favicon.svg`/`icons.svg` but no
+  `manifest.json`) — add-to-homescreen is not currently supported.
+- Nothing else identified as missing UI; every page in the priority list
+  (World, Growth, Journal, Memories, Timeline) was audited and finished
+  this session.
+
+## Remaining UX improvements
+
+- Personalization scope (see "Product Decisions Needed")
+- A gentle, opt-in daily-invitation mechanism was considered and explicitly
+  deferred — see "Remaining features" (Notifications)
+
+## Remaining animations
+
+- No cross-fade/transition **between routes** — navigating from, say,
+  World to Growth is instant with no shared transition. Every individual
+  page now has its own entrance fade-in (added this session), but there is
+  no route-to-route choreography. Worth considering with `framer-motion`'s
+  `AnimatePresence` keyed on route path, kept subtle, if it's judged worth
+  the added complexity — not currently a gap anyone has flagged.
+- Everything else animation-related identified during this session's pass
+  (immediate-feedback sparkle/ripple/toast, tree hover, weather, entrance
+  transitions) is implemented.
+
+## Remaining ambient audio implementation
+
+Engineering is complete (see "Features partially completed" above). What's
+missing is content: `public/audio/day.mp3`, `night.mp3`, `rain.mp3`. This
+is explicitly a project-owner decision, not something for an engineering
+pass to invent — see "Product Decisions Needed".
+
+## Remaining accessibility work
+
+- Real contrast fixes were made this project (see "Bug Fixes" — three WCAG
+  AA failures found by computing actual ratios, all fixed) and keyboard tab
+  order was verified in a headless browser. **Not yet done:** a pass with
+  an actual screen reader (VoiceOver/NVDA/JAWS) rather than heuristic
+  review of ARIA attributes; automated accessibility testing (e.g.
+  `axe-core`) is not integrated into the build or CI.
+- Everything authenticated (World, Growth, Journal, Memories, Timeline) has
+  never been accessibility-tested in a real browser by a human, for the
+  same reason nothing authenticated has been visually verified — see
+  "Known Issues".
+
+## Remaining performance improvements
+
+- No Lighthouse audit has been run — bundle-size improvements (route-level
+  code splitting, main chunk 168 KB → 84 KB gzipped) were verified by build
+  output and a headless browser, not by a full Lighthouse pass.
+- Memory photos are downscaled client-side but not further optimised
+  (no AVIF/WebP conversion, no responsive `srcset`).
+- Font loading already uses `&display=swap` — checked this session, no
+  change needed.
+
+## Remaining production polish
+
+- No cross-browser testing beyond Chromium (this environment's only
+  available browser for headless verification).
+- No real-device testing (mobile viewport sizes were spot-checked in a
+  headless browser, not on actual hardware).
+- Dark mode has been built with real contrast math but never visually
+  QA'd by a human in a live session.
+
+## Known issues
+
+See the full "Known Issues" section below for detail. Summary: no ambient
+audio assets; Memories storage will eventually need Firebase Storage if
+photo volume grows; `GrowthPeriod`/`useReflection` double-subscribe to one
+plan path; 2 untriaged `npm audit` advisories.
+
+## Technical debt
+
+- Zero automated tests at any level — the single largest piece of technical
+  debt at this point, given the size of the codebase (23 rituals, 8 tree
+  stages, 9 wildlife species, 10 timeline event types, full CRUD across 5
+  content types). Recommended as the next priority after the standing
+  product decisions are resolved.
+- The double-subscription in `GrowthPeriod`/`useReflection` (see "Remaining
+  engineering tasks").
+- No CI pipeline — `npm run build`/`npm run lint` are run manually each
+  session, not automatically on push.
+
+## Important implementation decisions made this session
+
+- **Memories: added a detail view, not just polish.** Reading the page
+  during the finishing pass surfaced that a memory's `story` field was
+  captured on save and then permanently unreachable — `MemoryTile` never
+  displayed it. This was treated as a bug fix within the Memories task,
+  not a new feature request, since it made an existing field pointless.
+- **Journal: deliberately did not colour-code mood by tone.** Considered
+  mapping each of the five moods to a distinct accent colour for visual
+  hierarchy, decided against it — a colour gradient across moods would
+  quietly imply some are better than others, which the product philosophy
+  explicitly rules out ("users should never feel judged"). All five moods
+  keep equal visual weight.
+- **Growth: `useYearlyOverview` is a one-time read, not a subscription.**
+  A year of history changes slowly enough that a live listener would cost
+  far more than it is ever worth — consistent with the existing "realtime
+  listeners only where live sync provides real value" rule.
+- **Timeline: event-type colour tokens reuse the five existing ritual
+  accent tones** (`accent`/`water`/`ember`/`bloom`/`dusk`) rather than
+  introducing new palette values, keeping the "avoid excessive colours"
+  constraint intact while still making a year's shape scannable.
+
+## Files modified this session (Session 5 commit `07e60b5`)
+
+```
+.claude/project_status.md
+src/components/world/GrowthPeriod.tsx
+src/components/world/WorldScene.tsx
+src/components/world/YearChart.tsx        (new)
+src/hooks/usePlanning.ts
+src/pages/DashboardPage.tsx
+src/pages/JournalPage.tsx
+src/pages/MemoriesPage.tsx
+src/pages/TimelinePage.tsx
+src/pages/WorldPage.tsx
+```
+
+Previous session (Session 4, commit `c5c8c97` — production polish: chimes,
+weather, accessibility, code splitting) touched 29 files; see that commit
+directly for its full list if needed.
+
+## Recommended implementation order
+
+1. Project owner confirms this session's and the prior session's work in a
+   real signed-in browser session (nothing authenticated has been seen
+   firsthand by a human from inside this tool — see "Known Issues")
+2. Resolve the three standing "Product Decisions Needed" (ambient audio
+   content, Memories storage at scale, personalization scope)
+3. Automated tests — start with the highest-risk pure logic:
+   `services/world.ts` (world derivation), `services/ritual.ts`
+   (honour/release idempotency), `services/planning.ts` (reflection
+   generation)
+4. Fix the `GrowthPeriod`/`useReflection` double-subscription
+5. Triage the 2 `npm audit` advisories
+6. Then: whichever of Notifications / deeper Personalization / AI
+   Reflection-with-a-model the resolved product decisions point toward
+
+## Exact next priority
+
+**Confirm the application in a real signed-in session.** Every fix and
+every feature built across Sessions 3, 4 and 5 has been verified by build
+output, lint, and headless-browser checks of what can be reached without
+authentication — nothing authenticated has been confirmed working by a
+human. This is not a suspicion of a bug; it is a genuine gap in this
+environment's ability to verify its own work, and it is the one thing a
+human needs to do that no amount of further engineering substitutes for.
+
+---
+
 # Overall Progress
 
 ## Completed
