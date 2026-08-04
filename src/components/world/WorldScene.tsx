@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Bird,
   Bug,
@@ -13,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { WildlifePresence, WorldSnapshot } from "../../types/world";
+import type { WeatherCondition, WildlifePresence, WorldSnapshot } from "../../types/world";
 import { usePrefersStillness } from "../../hooks/useTheme";
 import { clamp01, cx, seededSequence } from "../../utils/helpers";
 
@@ -47,11 +47,40 @@ export interface WorldSceneProps {
   worldId: string;
   snapshot: WorldSnapshot;
   className?: string;
+
+  /** Today's weather over this world. Purely atmospheric — see `deriveWeather`. */
+  weather?: WeatherCondition;
+
+  /**
+   * Bumped by the caller each time a ritual is newly honoured, so the pond
+   * can answer with a ripple — the specification's own example of immediate
+   * feedback for a meaningful action.
+   */
+  pulseSignal?: number;
 }
 
-export function WorldScene({ worldId, snapshot, className }: WorldSceneProps) {
+export function WorldScene({
+  worldId,
+  snapshot,
+  className,
+  weather = "clear",
+  pulseSignal,
+}: WorldSceneProps) {
   const prefersStillness = usePrefersStillness();
   const { tree, garden, pond, wildlife } = snapshot;
+
+  const raindrops = useMemo(() => {
+    if (weather !== "rain") return [];
+
+    const count = 26;
+    const values = seededSequence(`${worldId}:rain`, count * 3);
+
+    return Array.from({ length: count }, (_, index) => ({
+      x: values[index * 3] * 100,
+      duration: 0.7 + values[index * 3 + 1] * 0.6,
+      delay: values[index * 3 + 2] * 2,
+    }));
+  }, [worldId, weather]);
 
   const flowers = useMemo(() => {
     const values = seededSequence(`${worldId}:flowers`, garden.flowers * 3);
@@ -142,6 +171,28 @@ export function WorldScene({ worldId, snapshot, className }: WorldSceneProps) {
               opacity={0.8}
             />
           ))}
+
+          {/* A ripple, once, each time a ritual is newly honoured — the
+              specification's own example of an immediate response. */}
+          <AnimatePresence>
+            {pulseSignal && !prefersStillness ? (
+              <motion.ellipse
+                key={pulseSignal}
+                cx={76}
+                cy={84}
+                rx={4}
+                ry={1.6}
+                fill="none"
+                stroke="var(--palette-water-200)"
+                strokeWidth={0.4}
+                initial={{ opacity: 0.6, scale: 0.6 }}
+                animate={{ opacity: 0, scale: 3 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.4, ease: [0.22, 0.61, 0.36, 1] }}
+                style={{ transformOrigin: "76px 84px" }}
+              />
+            ) : null}
+          </AnimatePresence>
         </g>
 
         {/* Tree */}
@@ -183,6 +234,27 @@ export function WorldScene({ worldId, snapshot, className }: WorldSceneProps) {
           ));
         })}
       </div>
+
+      {weather === "rain" ? (
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          {prefersStillness ? (
+            // Motion is off — a soft wash reads as "rain" without any movement.
+            <div className="absolute inset-0 bg-water/10" />
+          ) : (
+            raindrops.map((drop, index) => (
+              <span
+                key={index}
+                className="absolute top-0 h-10 w-px bg-linear-to-b from-transparent via-water/50 to-transparent"
+                style={{
+                  left: `${drop.x}%`,
+                  animation: `rainfall ${drop.duration}s linear infinite`,
+                  animationDelay: `${drop.delay}s`,
+                }}
+              />
+            ))
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

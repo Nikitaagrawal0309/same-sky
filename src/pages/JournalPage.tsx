@@ -6,6 +6,7 @@ import { JOURNAL_MOODS } from "../types/journal";
 import { JOURNAL_TITLE_MAX_LENGTH } from "../utils/validators";
 import { useProfile, useUid } from "../hooks/useAuth";
 import { useJournal } from "../hooks/useJournal";
+import { playChime } from "../services/audio";
 import { usePartner } from "../hooks/useWorld";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
@@ -153,6 +154,11 @@ function JournalComposer({ open, entry, onClose, onSubmit }: JournalComposerProp
 
     try {
       await onSubmit({ title: title.trim() || null, body, mood });
+
+      if (!entry) {
+        playChime("journal-saved");
+      }
+
       onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "That entry could not be saved.");

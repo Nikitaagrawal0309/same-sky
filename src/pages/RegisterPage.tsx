@@ -9,6 +9,7 @@ import {
 } from "../hooks/useAuth";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { GoogleIcon } from "../components/ui/GoogleIcon";
 import AuthLoading from "../components/AuthLoading";
 
 /**
@@ -45,7 +46,9 @@ export default function RegisterPage() {
       <Button
         block
         size="lg"
+        variant="quiet"
         className="mt-10"
+        icon={<GoogleIcon className="size-4.5" />}
         loading={isSigningIn}
         loadingLabel="Opening…"
         onClick={() => void signIn()}

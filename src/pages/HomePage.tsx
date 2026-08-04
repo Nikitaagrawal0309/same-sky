@@ -32,6 +32,15 @@ export default function HomePage() {
     <div className="relative isolate flex min-h-svh flex-col overflow-hidden">
       <SkyBackdrop sky={sky} className="absolute inset-0 -z-10" />
 
+      {/*
+        A real sky ranges from a bright midday blue to a deep midnight —
+        white text alone cannot stay legible across all of it (bright day
+        skies fall well under WCAG AA contrast against plain white). A
+        uniform scrim keeps every phase's colour and mood visible while
+        guaranteeing the text above it always reads clearly.
+      */}
+      <div aria-hidden className="absolute inset-0 -z-10 bg-black/50" />
+
       <div className="ss-container flex flex-1 flex-col justify-center py-24">
         <div className="max-w-2xl motion-safe:animate-(--animate-rise)">
           <p className="text-sm font-medium tracking-[0.2em] text-white/70 uppercase">

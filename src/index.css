@@ -38,6 +38,14 @@
   --palette-bark-600: #3c4232;
   --palette-bark-500: #5a6049;
   --palette-bark-400: #7d836c;
+  /*
+    Between 400 and 500. Exists specifically so light-mode "faint" text has
+    somewhere to live that still clears WCAG AA (4.5:1) for normal-sized
+    text against both --palette-paper-0 and --palette-paper-50 — 400 alone
+    only reaches ~3.7–3.9:1 against those, which reads fine to most people
+    but genuinely fails the standard for anything but large text.
+  */
+  --palette-bark-450: #6f755e;
   --palette-bark-300: #a5aa94;
   --palette-bark-200: #c9ccbb;
   --palette-bark-100: #e6e8de;
@@ -122,7 +130,7 @@
 
   --ss-ink: var(--palette-bark-800);
   --ss-ink-soft: var(--palette-bark-500);
-  --ss-ink-faint: var(--palette-bark-400);
+  --ss-ink-faint: var(--palette-bark-450);
   --ss-ink-inverse: var(--palette-paper-50);
 
   --ss-accent: var(--palette-moss-600);
@@ -133,7 +141,13 @@
   --ss-water: var(--palette-water-500);
   --ss-water-soft: var(--palette-water-100);
 
-  --ss-ember: var(--palette-ember-500);
+  /*
+    600, not 500: this token carries every error and validation message in
+    the product (`text-ember`, `border-ember`). 500 only reaches ~4.0:1
+    against white, just under WCAG AA for normal text; 600 clears it
+    comfortably while staying recognisably the same warm terracotta.
+  */
+  --ss-ember: var(--palette-ember-600);
   --ss-ember-soft: var(--palette-ember-100);
 
   --ss-bloom: var(--palette-bloom-500);
@@ -264,6 +278,21 @@
   --animate-rise: rise 0.7s var(--ease-settle) both;
   --animate-fade-in: fade-in 0.5s var(--ease-calm) both;
   --animate-shimmer: shimmer 2.4s var(--ease-breath) infinite;
+}
+
+/*
+  Rain streaks vary their duration per drop for a natural fall, so each one
+  is animated with an inline `animation` shorthand (see WorldScene) rather
+  than through a single shared utility above — the keyframes still live here
+  with the rest of the design system's motion.
+*/
+@keyframes rainfall {
+  from {
+    transform: translate3d(0, -10%, 0);
+  }
+  to {
+    transform: translate3d(0, 110%, 0);
+  }
 }
 
 @keyframes breathe {

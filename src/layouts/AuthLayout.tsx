@@ -1,6 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
 
 import { APP_NAME, ROUTES } from "../app/constants";
+import RouteSuspense from "../components/RouteSuspense";
 
 /**
  * The sign-in shell.
@@ -27,7 +28,9 @@ export default function AuthLayout() {
         className="flex flex-1 items-center justify-center px-6 pb-24"
       >
         <div className="w-full max-w-md">
-          <Outlet />
+          <RouteSuspense>
+            <Outlet />
+          </RouteSuspense>
         </div>
       </main>
     </div>

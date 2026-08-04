@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 import type { UserPreferences } from "../types/user";
 import { getUserPreferences, saveUserPreferences } from "../services/user";
+import { setChimeVolume, setChimesEnabled } from "../services/audio";
 import { useUiStore } from "../store/uiStore";
 import { useUid } from "./useAuth";
 
@@ -24,6 +25,18 @@ export function useAppearance(): void {
   const uid = useUid();
   const syncWithSystem = useUiStore((state) => state.syncWithSystem);
   const hydrate = useUiStore((state) => state.hydrate);
+  const ambientAudio = useUiStore((state) => state.ambientAudio);
+  const ambientVolume = useUiStore((state) => state.ambientVolume);
+
+  // The synthesised feedback chimes share the ambient-audio preference —
+  // one switch for all sound, wherever in the app it happens to play.
+  useEffect(() => {
+    setChimesEnabled(ambientAudio);
+  }, [ambientAudio]);
+
+  useEffect(() => {
+    setChimeVolume(ambientVolume);
+  }, [ambientVolume]);
 
   // Follow the operating system while a "system" preference is in effect.
   useEffect(() => {

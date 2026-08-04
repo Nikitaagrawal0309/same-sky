@@ -5,6 +5,7 @@ import { usePairId, useUid } from "../hooks/useAuth";
 import { useWorldStore } from "../store/worldStore";
 import { AppHeader } from "../components/layout/AppHeader";
 import { AppNavigationBar } from "../components/layout/AppNavigation";
+import RouteSuspense from "../components/RouteSuspense";
 
 /**
  * The signed-in application shell.
@@ -39,7 +40,9 @@ export default function DashboardLayout() {
 
       {/* The trailing space clears the bottom navigation on small screens. */}
       <main id="main" tabIndex={-1} className="flex-1 pb-24 md:pb-16">
-        <Outlet />
+        <RouteSuspense>
+          <Outlet />
+        </RouteSuspense>
       </main>
 
       <AppNavigationBar />

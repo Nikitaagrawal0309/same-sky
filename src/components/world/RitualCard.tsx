@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Sparkles } from "lucide-react";
 
 import type { RitualStatus } from "../../types/ritual";
+import { playChime } from "../../services/audio";
 import { usePrefersStillness } from "../../hooks/useTheme";
 import { cx } from "../../utils/helpers";
 import { RitualIcon } from "../ui/Icon";
@@ -12,8 +13,10 @@ import { RitualIcon } from "../ui/Icon";
  *
  * Honouring a ritual is the single most frequent action in the product, so it
  * has to feel unmistakably good without shading into a game mechanic — no
- * points appear, nothing counts up, and the only feedback is the small warmth
- * of the card settling into its honoured state.
+ * points appear, nothing counts up. The feedback is small and immediate: the
+ * card settles into its honoured state, a brief sparkle rises past the
+ * checkmark, and a soft chime plays — the specification's "small visual and
+ * audio response" for a meaningful action, kept genuinely small.
  *
  * Pressing an already-honoured ritual releases it, for the person who tapped
  * by accident. There is deliberately no separate undo control: the same
@@ -38,6 +41,7 @@ export interface RitualCardProps {
 
 export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualCardProps) {
   const [isPending, setIsPending] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
   const prefersStillness = usePrefersStillness();
   const { definition, honouredBySelf, honouredByPartner } = status;
 
@@ -48,9 +52,17 @@ export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualC
 
     try {
       if (honouredBySelf) {
+        playChime("ritual-released");
         await onRelease();
-      } else {
-        await onHonour();
+        return;
+      }
+
+      const created = await onHonour();
+
+      if (created) {
+        playChime("ritual-honoured");
+        setCelebrating(true);
+        window.setTimeout(() => setCelebrating(false), 900);
       }
     } finally {
       setIsPending(false);
@@ -65,7 +77,7 @@ export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualC
       aria-pressed={honouredBySelf}
       whileTap={prefersStillness ? undefined : { scale: 0.985 }}
       className={cx(
-        "flex w-full items-center gap-4 rounded-2xl border p-4 text-left",
+        "relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border p-4 text-left",
         "transition-colors duration-300 ease-(--ease-calm)",
         "disabled:pointer-events-none",
         honouredBySelf
@@ -109,6 +121,21 @@ export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualC
           {partnerName ? `${partnerName} has also honoured this today.` : "Your partner has also honoured this today."}
         </span>
       ) : null}
+
+      <AnimatePresence>
+        {celebrating && !prefersStillness ? (
+          <motion.span
+            aria-hidden
+            className="pointer-events-none absolute top-3 right-3 text-accent"
+            initial={{ opacity: 0, y: 6, scale: 0.6 }}
+            animate={{ opacity: [0, 1, 1, 0], y: -18, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Sparkles className="size-5" strokeWidth={1.6} />
+          </motion.span>
+        ) : null}
+      </AnimatePresence>
     </motion.button>
   );
 }

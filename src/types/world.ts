@@ -235,6 +235,17 @@ export type SkyPhase =
   | "dusk"
   | "night";
 
+/**
+ * The weather over the world today.
+ *
+ * Decorative and gentle by design — there is no storm system, only whether
+ * today happens to be a rainy one. Same as the sky, it is personal: derived
+ * from the viewer's own local day, not shared data, so it never needs a
+ * network request or a location permission the product has no other reason
+ * to ask for.
+ */
+export type WeatherCondition = "clear" | "rain";
+
 export interface SkyState {
   phase: SkyPhase;
 

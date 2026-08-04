@@ -175,6 +175,10 @@ export default function PairPage() {
     <div className="relative isolate min-h-svh">
       <SkyBackdrop sky={sky} className="absolute inset-0 -z-10 h-[42svh]" />
 
+      {/* See HomePage for why: white text needs this to stay legible against
+          a bright midday sky, not only the darker hours. */}
+      <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-[42svh] bg-black/50" />
+
       <div className="ss-container flex min-h-svh flex-col justify-center py-16">
         <div className="mx-auto w-full max-w-xl">
           <div className="mb-10 text-center motion-safe:animate-(--animate-fade-in)">

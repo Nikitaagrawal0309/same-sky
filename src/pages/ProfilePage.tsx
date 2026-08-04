@@ -3,6 +3,7 @@ import { usePartner, useWorldSnapshot, useWorldState } from "../hooks/useWorld";
 import { Avatar } from "../components/ui/Avatar";
 import { Card, SectionHeading } from "../components/ui/Card";
 import { formatDuration } from "../utils/date";
+import { lowercaseFirst } from "../utils/helpers";
 
 /**
  * Who this world belongs to.
@@ -19,7 +20,11 @@ export default function ProfilePage() {
 
   return (
     <div className="ss-container max-w-2xl py-12">
-      <SectionHeading level={1} title="Profile" />
+      <SectionHeading
+        level={1}
+        title="Profile"
+        description="Whose world this is, and how far you've come together."
+      />
 
       <div className="mt-10 space-y-6">
         <Card padding="md">
@@ -51,7 +56,8 @@ export default function ProfilePage() {
             <p className="text-[0.95rem] leading-relaxed text-ink-soft">
               Your world was created {formatDuration(snapshot.ageInDays)} ago, and has
               held {world.totalRituals} {world.totalRituals === 1 ? "ritual" : "rituals"}{" "}
-              since.
+              since. Your tree has become {lowercaseFirst(snapshot.tree.stage.label)} —{" "}
+              {snapshot.tree.stage.meaning}
             </p>
           </Card>
         ) : null}

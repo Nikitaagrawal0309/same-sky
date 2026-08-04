@@ -6,7 +6,7 @@
 Last Updated: 2026-08-04
 
 Current Phase:
-Core Product Complete → Personalization, Accessibility & Production Polish Next
+Production Polish Complete → Personalization Scope & Content Decisions Next
 
 Project Status:
 Active Development
@@ -111,56 +111,106 @@ Active Development
   (five destinations total, matching the pre-existing "five and no more"
   navigation constraint)
 
+### Production Polish (Session 4)
+
+- ✅ **Immediate feedback system** — the specification's explicit requirement
+  that "every meaningful action" produce "a small visual and audio response"
+  is now implemented, not just the ambient layer: a synthesised chime
+  service (`services/audio.ts`, Web Audio API, no external assets) plays a
+  distinct short phrase for honouring a ritual, releasing one, sending a
+  note, opening one, saving a memory, saving a journal entry, and reaching a
+  tree-stage milestone — all drawn from one consonant scale so they read as
+  one instrument. Paired with real visual responses: a sparkle burst on a
+  newly honoured `RitualCard`, a pond ripple in `WorldScene` on any honour,
+  and a dismissible `MilestoneToast` the first time a device sees a new tree
+  stage (tracked client-side; the stage itself is still never stored,
+  matching the derive-don't-store rule elsewhere)
+- ✅ **Dynamic weather** (`deriveWeather` in `services/world.ts`) — the
+  Future Systems item that had no implementation at all. Seeded by world id
+  and local day (stable for the day, private to each world, no location
+  permission or external weather API), it renders gentle falling rain in
+  `WorldScene` and — tying sound and sight together — makes the "rain"
+  ambient bed override the time-of-day bed in `useAmbientAudio` regardless
+  of hour, matching the specification's "gentle rain, distant thunder"
+  belonging to any time of day
+- ✅ Google's own "G" mark added to both sign-in buttons (their branding
+  guidelines expect it; a generic button was a small trust gap)
+- ✅ Copy pass: replaced "energy" (gamification-adjacent internal jargon) and
+  a bare unlabelled number in the Growth stat grid with legible, warm
+  language consistent with the "tend to" vocabulary used everywhere else
+- ✅ **Real accessibility fixes, not just an audit**: found and fixed a WCAG
+  AA contrast failure (white hero text over a bright midday sky measured as
+  low as 1.27:1 against the required 4.5:1) by adding a scrim to every
+  screen that overlays text on `SkyBackdrop`; found and fixed two more
+  failing colour tokens by computing actual contrast ratios for every
+  text/background pair in both themes (`--ss-ink-faint` in light mode was
+  3.71–3.94:1, `--ss-ember` — every error message in the product — was
+  4.04:1); found and fixed two icon-only controls with no accessible name
+  (the note-vessel picker, and the memory photo button once a photo is
+  chosen); verified keyboard tab order and visible focus rings in a real
+  browser
+- ✅ **Real performance work, not just a plan**: route-level code splitting
+  via `React.lazy` for every page except the eagerly-loaded landing page,
+  with a shared `RouteSuspense` boundary per layout so the header and
+  navigation stay mounted during a route's chunk load instead of
+  flickering. Verified in a real headless browser and by build output: the
+  main JS chunk dropped from 168 KB to 84 KB gzipped, with each page now a
+  separate 1–22 KB chunk fetched only when visited
+- ✅ Responsive spot-check at 375px/768px/1280px — no horizontal overflow
+  found on any checked page
+
 ---
 
 ## Not Yet Implemented
 
-- AI Reflection (deliberately deferred — see Known Issues)
-- Notifications / daily invitation delivery
+- AI Reflection using an actual model (deliberately deferred — no API
+  credentials to add unilaterally; the deterministic pattern-analysis
+  reflection engine already built already satisfies the specification's
+  five AI bullet points — summarise, organise, reflect, identify positive
+  patterns, encourage growth — without one; see Known Issues)
+- Notifications / daily invitation delivery (would need push infrastructure
+  and a service worker; also sits close to the philosophy's "never feel
+  pressured" boundary and deserves a product conversation, not a silent
+  build)
 - Personalization beyond theme/motion/hemisphere/ambient audio (no per-user
-  accent colour, no custom vessel/mood sets, etc.)
-- A dedicated accessibility pass beyond what was built in as each component
-  was written (focus management, labels, `aria-live`, reduced motion are all
-  already in place; a systematic audit has not been run)
-- A dedicated performance pass (route-level code splitting, image lazy
-  loading beyond `loading="lazy"` on avatars/memories, bundle analysis)
+  accent colour, no custom vessel/mood sets, etc. — scope still needs
+  product input, per the standing note below)
 - Offline support
 - Automated tests
 - Production analytics/error monitoring
-- Ambient audio assets (day/night/rain beds — content, not code)
+- Ambient *audio assets* — the day/night/rain bed engine is complete and has
+  been since Session 2; the `.mp3` files themselves are a content decision,
+  not an engineering one (see Known Issues)
 
 ---
 
 # Current Engineering Goal
 
-Personalization, accessibility, performance and production polish on top of
-a now feature-complete product: every system named in the specification
-(shared world, rituals, notes, journal, memories, planning, reflection,
-timeline, progress charts) exists and is wired end to end.
+Every system named in the specification is implemented, wired end to end,
+and has had a real production-polish pass: immediate feedback (audio +
+visual), dynamic weather, a verified accessibility pass with real contrast
+and labelling fixes, and a verified performance pass with real code
+splitting. What remains is either a product decision this pass should not
+make silently, or a content asset (audio recordings) this pass cannot create.
 
 ---
 
 # Immediate Next Priority
 
-0. **Confirm both fixes in "Bug Fixes" below in a real signed-in session** —
-   this environment cannot complete Google OAuth, so neither the original
-   render-loop crash nor the subsequent infinite-loading-spinner fix has
-   been re-observed firsthand. Reload World and Growth; both should now
-   show either real content or a clear error, never an unresolving spinner.
-   If the console shows `"No world exists at ... Creating it now"`, that
-   pair's world was healed from stale data — worth a quick sanity check
-   that its tree/garden state looks right afterward.
-1. Accessibility audit — keyboard-only pass through every flow, screen
-   reader spot-check, colour contrast check against the design tokens in
-   `index.css` (light and dark)
-2. Performance pass — route-level `React.lazy`/code splitting (the bundle is
-   currently one chunk per vendor, not per route), Lighthouse pass
-3. Personalization — worth product input before building further (see
-   "Product Decisions Needed" below)
-4. Decide on and source ambient audio assets, or explicitly decide the
-   product ships silent for now
-5. Decide on Firebase Storage vs. continuing with inline data-URL images for
-   Memories once real photo volume is understood
+0. **Confirm every fix in "Bug Fixes" below in a real signed-in session** —
+   this environment cannot complete Google OAuth, so nothing authenticated
+   (World, Growth, the contrast fixes, the new chime/weather/celebration
+   features) has been seen firsthand by a human yet. Load World and Growth;
+   honour a ritual and listen/watch for the chime and sparkle; check the
+   Growth stat grid reads "X rituals" rather than a bare number; on a rainy
+   day for that world, confirm rain renders and the ambient bed switches.
+1. Resolve the "Product Decisions Needed" below with the project owner —
+   none of them block further engineering, but this pass should not guess
+   at them
+2. Personalization scope, once decided
+3. Automated tests — the product has none yet; worth prioritizing before the
+   codebase grows much larger
+4. Offline support, production analytics/error monitoring
 
 ---
 
@@ -382,6 +432,68 @@ existed), every subscription error, and every self-heal attempt.
   `"No world exists at ... Creating it now"` warning — worth checking for
   once, since it points at exactly which pair had the stale data.
 
+## 2026-08-04 — Three WCAG AA contrast failures, found by computing real ratios
+
+**Symptom:** None reported — found during a self-directed production-polish
+pass by computing actual WCAG contrast ratios for the design tokens rather
+than eyeballing them, after noticing the landing page's hero text is fixed
+white over a backdrop (`SkyBackdrop`) that ranges from near-black to bright
+midday blue.
+
+**What was actually failing**, computed against the real hex values in
+`index.css`:
+
+1. White hero text on `HomePage`, `PairPage` and the `WorldPage` hero label
+   over a bright-day sky: as low as **1.27:1** (horizon colour) and **2.05:1**
+   (mid-sky colour) against the required 4.5:1 for normal text. Night skies
+   were always fine; only the brighter hours failed, which is exactly the
+   kind of bug that is easy to never notice if you only ever look at the
+   screenshot you happened to take at one time of day.
+2. `--ss-ink-faint` (light theme) — used for every caption, hint and
+   timestamp in the product — measured 3.71:1 against `--palette-paper-0`
+   and 3.94:1 against `--palette-paper-50`, both under 4.5:1.
+3. `--ss-ember` — used for every validation and error message in the
+   product (`text-ember`, `border-ember` in `Field.tsx`, the `role="alert"`
+   paragraphs on `LoginPage`/`RegisterPage`/`PairPage`) — measured 4.04:1.
+
+**Fix:**
+
+1. Added a scrim behind the text on all three affected screens: a uniform
+   `bg-black/50` on `HomePage` and `PairPage` (both show text over open
+   sky), a bottom `gradient-to-t from-black/55` on `WorldPage` (text sits
+   only at the bottom of its hero, over the world scene's darker ground).
+   Verified the night appearance is visually unaffected (already dark
+   enough that the scrim is barely perceptible) and confirmed by
+   recomputing the worst-case ratio afterward.
+2. Added `--palette-bark-450` (`#6f755e`), a new shade between the existing
+   400 and 500, and pointed light-theme `--ss-ink-faint` at it — 4.79:1
+   against white, 4.52:1 against canvas. Dark theme's `--ss-ink-faint`
+   already passed (4.79:1) and was left alone.
+3. Changed light-theme `--ss-ember` from `--palette-ember-500` to
+   `--palette-ember-600` — 5.89:1 against white. Checked every direct use of
+   the base `ember` token first (`grep`) to confirm the only consumers are
+   error/validation states, so darkening it has no decorative side effect
+   elsewhere (the one purely decorative use, a flower centre in
+   `WorldScene`, references a raw palette value directly and was untouched).
+
+**Also fixed in the same pass, same root cause (missing accessible name):**
+
+- The daily-note vessel picker's five icon-only buttons had only a `title`
+  attribute — added `aria-label` alongside it.
+- The memory-photo picker button loses all its visible text once a photo is
+  chosen (its content becomes just `<img alt="">`), leaving it with no
+  accessible name at all — added a conditional `aria-label="Change photo"`.
+
+**Verification performed:** contrast ratios recomputed with the WCAG
+relative-luminance formula for every fix above (not estimated); `npm run
+build` and `npm run lint` clean after each change; a headless-browser
+keyboard-tab-order check confirmed visible focus rings and correct order on
+the landing page; a fresh screenshot confirmed the night-time appearance is
+unchanged. **The daytime scrim was not visually re-verified** — this
+environment cannot change system time, and the screenshots taken during this
+session were all captured at night; the fix is verified by the contrast math
+alone. Worth a look at midday in a real session.
+
 ---
 
 # Definition of Success
@@ -509,6 +621,81 @@ Next Session:
   hang), and check the console for the self-heal warning
 - Then resume where Session 2 left off: accessibility audit, performance
   pass, the two open product decisions, personalization scope
+
+## Session 4
+
+Switched from bug-fixing back to production implementation, per instruction:
+audit every page against the specification, implement everything missing,
+and do a real polish pass — not a plan for one — across UX, copy, animation,
+audio, accessibility and performance. Explicitly told to keep going across
+every page rather than stop after one.
+
+Completed:
+
+- Audited every page against `overview_and_specification.md` and
+  `project_status.md` and prioritized the gap list before writing code
+- Built the immediate-feedback system the specification explicitly requires
+  and the product did not yet have: a synthesised chime service (Web Audio
+  API, no external assets — `services/audio.ts`) for honouring/releasing a
+  ritual, sending/opening a note, saving a memory, saving a journal entry,
+  and reaching a tree-stage milestone; paired with real visual responses —
+  a sparkle burst on `RitualCard`, a pond ripple in `WorldScene`, and a
+  dismissible `MilestoneToast`
+- Built dynamic weather (`deriveWeather`) — the one Future Systems item with
+  no implementation at all — seeded per world per local day, rendered as
+  gentle rain in `WorldScene`, and tied into ambient audio so the rain bed
+  overrides time-of-day regardless of hour
+- Added Google's own sign-in mark to both auth buttons
+- Copy pass: removed gamification-adjacent "energy" language and a bare
+  unlabelled number from the Growth page, replacing both with the product's
+  established "tend to" vocabulary
+- Ran a real accessibility pass, not just an audit: computed actual WCAG
+  contrast ratios for every text/background token pair in both themes
+  (rather than eyeballing them) and found three real failures — white hero
+  text over a bright sky as low as 1.27:1, light-mode `--ss-ink-faint` at
+  3.71–3.94:1, light-mode `--ss-ember` (every error message in the product)
+  at 4.04:1 — fixed all three and recomputed to confirm. Also found and
+  fixed two icon-only controls with no accessible name. Verified keyboard
+  tab order and focus rings in a real headless browser
+- Ran a real performance pass, not just a plan: route-level `React.lazy`
+  code splitting for every page but the landing page, with a shared
+  `RouteSuspense` per layout so chrome (header/nav) stays mounted during a
+  route's chunk load. Verified in a real browser (all lazy routes load with
+  zero console errors) and by build output — main JS chunk dropped from
+  168 KB to 84 KB gzipped
+- Spot-checked responsive behaviour at 375px/768px/1280px — no horizontal
+  overflow found
+- Verified via `npm run build` and `npm run lint` after every change in this
+  session (all clean), and repeated headless-browser checks: the
+  unauthenticated golden path, a full lazy-route flow (landing → login →
+  register → 404, each a separate chunk), a mobile/tablet screenshot pass,
+  and a keyboard-navigation tab-order check
+- Full write-ups for the three contrast/accessibility fixes under "Bug
+  Fixes" above, since they are genuine defects even though nobody reported
+  them
+
+Not done, and why:
+
+- AI Reflection using an actual model — no credentials to add one
+  unilaterally; the existing deterministic reflection engine already
+  satisfies the specification's five AI bullet points without one
+- Notifications, deeper personalization, Firebase Storage for Memories,
+  ambient audio *assets* — every one of these was already correctly
+  identified in an earlier session as needing a product decision or content
+  this pass cannot create, and that has not changed; see "Product Decisions
+  Needed"
+- Automated tests, offline support, production monitoring — real gaps,
+  not yet started
+
+Next Session:
+
+- Project owner to confirm this session's work in a real signed-in session,
+  starting with the items under "Immediate Next Priority" item 0 — in
+  particular the daytime hero-text scrim, which was verified only by
+  contrast math, never seen at an actual bright hour
+- Resolve the standing "Product Decisions Needed" list
+- Automated tests are worth prioritizing next, ahead of further features,
+  now that the surface area is this large
 
 ---
 

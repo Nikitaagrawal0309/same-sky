@@ -172,6 +172,19 @@ export function firstNameOf(name: string): string {
 }
 
 /**
+ * Lowercase only the first character, leaving the rest untouched.
+ *
+ * For folding a proper-noun-style label (a tree stage's own name, "A seed")
+ * into the middle of a sentence. Plain `.toLowerCase()` would also flatten
+ * any later sentence that label is paired with — turning "Small, and
+ * unmistakably alive." into "small, and unmistakably alive." well past
+ * where a lowercase letter belongs.
+ */
+export function lowercaseFirst(value: string): string {
+  return value.length === 0 ? value : value.charAt(0).toLowerCase() + value.slice(1);
+}
+
+/**
  * Collapse whitespace and trim. Applied to everything a person types before it
  * is stored, so entries never differ only by invisible characters.
  */

@@ -4,6 +4,7 @@ import { ImagePlus, Images } from "lucide-react";
 import type { Memory, MemoryImage, MemoryKind } from "../types/memory";
 import { MEMORY_KINDS } from "../types/memory";
 import { useMemories } from "../hooks/useMemories";
+import { playChime } from "../services/audio";
 import { prepareMemoryImage } from "../services/storage";
 import { validateImageFile, validateMemory } from "../utils/validators";
 import { Button } from "../components/ui/Button";
@@ -150,6 +151,7 @@ function MemoryComposer({ open, onClose, onSave }: MemoryComposerProps) {
 
     try {
       await onSave({ title, story: story.trim() || null, date: todayKey(), kind, image });
+      playChime("memory-saved");
       reset();
       onClose();
     } catch (cause) {
@@ -196,6 +198,7 @@ function MemoryComposer({ open, onClose, onSave }: MemoryComposerProps) {
         <button
           type="button"
           onClick={() => fileInput.current?.click()}
+          aria-label={image ? "Change photo" : undefined}
           className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed border-line-strong bg-surface-sunken"
         >
           {image ? (

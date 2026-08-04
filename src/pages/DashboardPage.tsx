@@ -1,3 +1,4 @@
+import { RECENT_WINDOW_DAYS } from "../app/constants";
 import { useProfile } from "../hooks/useAuth";
 import { usePartner, useWorldSnapshot, useWorldState, useWorldStatus } from "../hooks/useWorld";
 import { useDomainShares, useProgressSeries } from "../hooks/usePlanning";
@@ -8,6 +9,7 @@ import { EnergyChart } from "../components/world/EnergyChart";
 import { GrowthPeriod } from "../components/world/GrowthPeriod";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { Spinner } from "../components/ui/Icon";
+import { recentDateKeys } from "../utils/date";
 import { formatPercent } from "../utils/helpers";
 import type { RitualId } from "../types/ritual";
 
@@ -75,6 +77,11 @@ export default function DashboardPage() {
     );
   }
 
+  const recentKeys = new Set(recentDateKeys(RECENT_WINDOW_DAYS));
+  const recentRituals = Object.entries(history)
+    .filter(([date]) => recentKeys.has(date))
+    .reduce((total, [, day]) => total + day.rituals, 0);
+
   const contributions = [
     profile ? { name: profile.displayName, contribution: world.contributions[profile.uid] } : null,
     partner ? { name: partner.displayName, contribution: world.contributions[partner.uid] } : null,
@@ -102,9 +109,9 @@ export default function DashboardPage() {
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Harmony" value={formatPercent(snapshot.harmony)} />
-        <Stat label="This month" value={String(snapshot.recentEnergy)} />
-        <Stat label="Lifetime rituals" value={String(world.totalRituals)} />
-        <Stat label="Active days" value={String(world.activeDays)} />
+        <Stat label="This month" value={`${recentRituals} rituals`} />
+        <Stat label="Since the beginning" value={`${world.totalRituals} rituals`} />
+        <Stat label="Days you've shown up" value={String(world.activeDays)} />
       </div>
 
       {contributions.length > 0 ? (
@@ -138,7 +145,7 @@ export default function DashboardPage() {
 
       {domainShares.length > 0 ? (
         <Card padding="md" className="mt-6">
-          <h2 className="text-lg text-ink">Where recent energy has gone</h2>
+          <h2 className="text-lg text-ink">What you've been tending to</h2>
           <div className="mt-5">
             <DomainShareBars shares={domainShares} />
           </div>

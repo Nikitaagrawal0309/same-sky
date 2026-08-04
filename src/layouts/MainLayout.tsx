@@ -1,5 +1,7 @@
 import { Outlet } from "react-router-dom";
 
+import RouteSuspense from "../components/RouteSuspense";
+
 /**
  * The public shell.
  *
@@ -15,7 +17,9 @@ export default function MainLayout() {
       </a>
 
       <main id="main" tabIndex={-1}>
-        <Outlet />
+        <RouteSuspense>
+          <Outlet />
+        </RouteSuspense>
       </main>
     </div>
   );

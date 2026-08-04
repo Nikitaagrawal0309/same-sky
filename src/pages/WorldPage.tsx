@@ -1,24 +1,29 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 
 import { useProfile } from "../hooks/useAuth";
 import {
   useHasPartner,
+  useNow,
   usePartner,
   useSky,
   useTodayRituals,
+  useTreeStageCelebration,
   useWorldSnapshot,
   useWorldState,
   useWorldStatus,
 } from "../hooks/useWorld";
 import { useWorldStore } from "../store/worldStore";
+import { useUiStore } from "../store/uiStore";
 import { useAmbientAudio } from "../hooks/useAmbientAudio";
 import { RITUAL_CATALOGUE } from "../services/ritual";
+import { deriveWeather } from "../services/world";
 import { Button } from "../components/ui/Button";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { AvatarPair } from "../components/ui/Avatar";
 import { Spinner } from "../components/ui/Icon";
 import { DailyNoteCard } from "../components/world/DailyNote";
+import { MilestoneToast } from "../components/world/MilestoneToast";
 import { RitualCard } from "../components/world/RitualCard";
 import { RitualPicker } from "../components/world/RitualPicker";
 import { SkyBackdrop } from "../components/world/SkyBackdrop";
@@ -39,6 +44,8 @@ export default function WorldPage() {
   const hasPartner = useHasPartner();
 
   const sky = useSky();
+  const now = useNow();
+  const hemisphere = useUiStore((state) => state.hemisphere);
   const world = useWorldState();
   const snapshot = useWorldSnapshot();
   const status = useWorldStatus();
@@ -46,9 +53,26 @@ export default function WorldPage() {
 
   const { statuses, honour, release } = useTodayRituals();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pulseSignal, setPulseSignal] = useState(0);
   const updatePractice = useWorldStore((state) => state.updatePractice);
+  const { celebration, dismiss } = useTreeStageCelebration(world?.worldId, snapshot?.tree.stage);
 
-  useAmbientAudio(sky);
+  const weather = useMemo(
+    () => (world ? deriveWeather(world.worldId, now, hemisphere) : "clear"),
+    [world, now, hemisphere],
+  );
+
+  useAmbientAudio(sky, weather);
+
+  async function handleHonour(ritualId: Parameters<typeof honour>[0]): Promise<boolean> {
+    const created = await honour(ritualId);
+
+    if (created) {
+      setPulseSignal((tick) => tick + 1);
+    }
+
+    return created;
+  }
 
   const firstName = profile ? firstNameOf(profile.displayName) : null;
   const partnerFirstName = partner ? firstNameOf(partner.displayName) : undefined;
@@ -76,7 +100,22 @@ export default function WorldPage() {
     <div className="pb-20">
       <div className="relative h-[46svh] min-h-80 w-full overflow-hidden sm:h-[54svh]">
         <SkyBackdrop sky={sky} className="absolute inset-0" />
-        <WorldScene worldId={world.worldId} snapshot={snapshot} className="absolute inset-0 rounded-none" />
+        <WorldScene
+          worldId={world.worldId}
+          snapshot={snapshot}
+          weather={weather}
+          pulseSignal={pulseSignal}
+          className="absolute inset-0 rounded-none"
+        />
+
+        {/* The ground beneath is dark enough on its own most of the time,
+            but a bright midday sky can still show through near the top of
+            this label on a short hero — this guarantees the text stays
+            legible regardless. */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/55 to-transparent"
+        />
 
         <div className="ss-container absolute inset-x-0 bottom-0 pb-8">
           <p className="text-sm font-medium tracking-[0.18em] text-white/75 uppercase">
@@ -143,7 +182,7 @@ export default function WorldPage() {
                     key={ritualStatus.definition.id}
                     status={ritualStatus}
                     partnerName={partnerFirstName}
-                    onHonour={() => honour(ritualStatus.definition.id)}
+                    onHonour={() => handleHonour(ritualStatus.definition.id)}
                     onRelease={() => release(ritualStatus.definition.id)}
                   />
                 ))}
@@ -161,6 +200,8 @@ export default function WorldPage() {
       />
 
       <p className="sr-only">{RITUAL_CATALOGUE.length} rituals exist across the practice.</p>
+
+      <MilestoneToast stage={celebration} onDismiss={dismiss} />
     </div>
   );
 }

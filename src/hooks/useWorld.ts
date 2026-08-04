@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { PartnerSummary } from "../types/user";
 import type { RitualStatus } from "../types/ritual";
-import type { SkyState, WorldSnapshot, WorldState } from "../types/world";
+import type { SkyState, TreeStage, WorldSnapshot, WorldState } from "../types/world";
+import { playChime } from "../services/audio";
 import { buildRitualStatuses, completionOf } from "../services/ritual";
 import { deriveSky, deriveWorld } from "../services/world";
 import { getPartnerUid } from "../services/pair";
@@ -163,4 +164,65 @@ export function useTodayRituals(): TodayRituals {
     honour,
     release,
   };
+}
+
+function readStoredStage(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredStage(key: string, stageId: string): void {
+  try {
+    localStorage.setItem(key, stageId);
+  } catch {
+    // Private browsing or blocked storage. Missing one celebration is a
+    // small loss next to breaking the page over it.
+  }
+}
+
+/**
+ * Notice the moment the tree reaches a new stage, once, for this device.
+ *
+ * The tree only ever grows, so "a stage this device has not celebrated yet"
+ * is a safe, simple way to detect the moment without any new state in the
+ * database — a local flag is enough, and losing it just means the next
+ * genuine change is celebrated again, which is a kind failure rather than a
+ * harmful one.
+ */
+export function useTreeStageCelebration(
+  worldId: string | undefined,
+  stage: TreeStage | undefined,
+): { celebration: TreeStage | null; dismiss: () => void } {
+  const [celebration, setCelebration] = useState<TreeStage | null>(null);
+
+  useEffect(() => {
+    if (!worldId || !stage) return;
+
+    const key = `same-sky:tree-stage:${worldId}`;
+    const seen = readStoredStage(key);
+
+    if (seen === stage.id) return;
+
+    writeStoredStage(key, stage.id);
+
+    // The very first time this device ever sees the tree, there is nothing
+    // to celebrate a change *from* — only genuine transitions are worth
+    // marking. This effect only ever runs again when the tree's stage id
+    // itself changes — at most a handful of times across a world's entire
+    // lifetime — so the cascading-render concern the lint rule is guarding
+    // against does not apply to it.
+    if (seen !== null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCelebration(stage);
+      playChime("milestone");
+    }
+    // `stage` is a freshly derived object on every render; only its `id`
+    // determines whether anything here needs to happen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [worldId, stage?.id]);
+
+  return { celebration, dismiss: () => setCelebration(null) };
 }

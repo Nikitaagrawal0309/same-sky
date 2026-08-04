@@ -3,6 +3,7 @@ import { Feather, Flame, Gem, Gift, Mail, MailOpen, type LucideIcon } from "luci
 
 import type { NoteVessel } from "../../types/note";
 import { NOTE_MAX_LENGTH } from "../../types/note";
+import { playChime } from "../../services/audio";
 import { useTodayNotes } from "../../hooks/useNotes";
 import { validateNote } from "../../utils/validators";
 import { Button } from "../ui/Button";
@@ -38,6 +39,11 @@ export function DailyNoteCard() {
 
   async function handleReveal(): Promise<void> {
     setRevealOpen(true);
+
+    if (waiting) {
+      playChime("note-opened");
+    }
+
     await open();
   }
 
@@ -152,6 +158,7 @@ function NoteComposer({ open, onClose, onSend }: NoteComposerProps) {
 
     try {
       await onSend(body, vessel);
+      playChime("note-sent");
       setBody("");
       onClose();
     } catch (cause) {
@@ -184,6 +191,7 @@ function NoteComposer({ open, onClose, onSend }: NoteComposerProps) {
             key={id}
             type="button"
             title={label}
+            aria-label={label}
             aria-pressed={vessel === id}
             onClick={() => setVessel(id)}
             className={cx(
