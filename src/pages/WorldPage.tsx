@@ -106,6 +106,7 @@ export default function WorldPage() {
           worldId={world.worldId}
           snapshot={snapshot}
           weather={weather}
+          season={sky.season}
           pulseSignal={pulseSignal}
           className="absolute inset-0 rounded-none"
         />

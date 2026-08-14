@@ -34,7 +34,7 @@ export function GrowthPeriod() {
   const periodKey = period === "week" ? toWeekKey(now) : toMonthKey(now);
 
   const { plan, add, remove } = usePlan(period, periodKey);
-  const { reflection, isLoading } = useReflection(period, periodKey);
+  const { reflection, isLoading } = useReflection(period, periodKey, plan);
 
   const partner = usePartner();
   const uid = useUid();

@@ -13,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { WeatherCondition, WildlifePresence, WorldSnapshot } from "../../types/world";
+import type { Season, WeatherCondition, WildlifePresence, WorldSnapshot } from "../../types/world";
 import { usePrefersStillness } from "../../hooks/useTheme";
 import { clamp01, cx, seededSequence } from "../../utils/helpers";
 
@@ -43,6 +43,67 @@ const WILDLIFE_ICONS: Record<WildlifePresence["species"], LucideIcon> = {
   owl: MoonStar,
 };
 
+/**
+ * Seasonal environments.
+ *
+ * `sky.season` was already being derived and used to gate which wildlife can
+ * appear, but the scene itself — ground, tree, flowers, weather — never
+ * answered to it, so a world looked identical in January and July. Every
+ * colour below is drawn from the existing palette scale already used
+ * elsewhere (moss, ember, bloom, bark, paper) rather than introducing new
+ * ones, the same discipline the Timeline's event colours followed.
+ */
+interface SeasonPalette {
+  groundFrom: string;
+  groundTo: string;
+  undergrowth: string;
+  /** The tree canopy's three overlapping circles, back to front. */
+  canopy: readonly [string, string, string];
+  /** Winter's canopy reads as sparser branches rather than full leaf cover. */
+  canopyScale: number;
+  canopyOpacity: number;
+  flowers: readonly [string, string, string];
+}
+
+const SEASON_PALETTES: Record<Season, SeasonPalette> = {
+  spring: {
+    groundFrom: "var(--palette-moss-400)",
+    groundTo: "var(--palette-moss-600)",
+    undergrowth: "var(--palette-moss-700)",
+    canopy: ["var(--palette-moss-400)", "var(--palette-moss-500)", "var(--palette-bloom-300)"],
+    canopyScale: 1,
+    canopyOpacity: 1,
+    flowers: ["var(--palette-bloom-300)", "var(--palette-bloom-400)", "var(--palette-paper-0)"],
+  },
+  summer: {
+    groundFrom: "var(--palette-moss-500)",
+    groundTo: "var(--palette-moss-700)",
+    undergrowth: "var(--palette-moss-800)",
+    canopy: ["var(--palette-moss-500)", "var(--palette-moss-600)", "var(--palette-moss-400)"],
+    canopyScale: 1,
+    canopyOpacity: 1,
+    flowers: ["var(--palette-bloom-400)", "var(--palette-ember-300)", "var(--palette-paper-0)"],
+  },
+  autumn: {
+    groundFrom: "var(--palette-moss-600)",
+    groundTo: "var(--palette-ember-800)",
+    undergrowth: "var(--palette-ember-900)",
+    canopy: ["var(--palette-ember-400)", "var(--palette-ember-600)", "var(--palette-ember-300)"],
+    canopyScale: 1,
+    canopyOpacity: 1,
+    flowers: ["var(--palette-ember-300)", "var(--palette-ember-500)", "var(--palette-bloom-300)"],
+  },
+  winter: {
+    groundFrom: "var(--palette-bark-400)",
+    groundTo: "var(--palette-bark-600)",
+    undergrowth: "var(--palette-bark-700)",
+    canopy: ["var(--palette-bark-400)", "var(--palette-bark-500)", "var(--palette-paper-100)"],
+    canopyScale: 0.74,
+    canopyOpacity: 0.6,
+    flowers: ["var(--palette-paper-100)", "var(--palette-bark-300)", "var(--palette-water-200)"],
+  },
+};
+
 export interface WorldSceneProps {
   worldId: string;
   snapshot: WorldSnapshot;
@@ -50,6 +111,9 @@ export interface WorldSceneProps {
 
   /** Today's weather over this world. Purely atmospheric — see `deriveWeather`. */
   weather?: WeatherCondition;
+
+  /** The viewer's current season — see `deriveSky`. Reshapes ground, tree and flower colour. */
+  season?: Season;
 
   /**
    * Bumped by the caller each time a ritual is newly honoured, so the pond
@@ -64,13 +128,15 @@ export function WorldScene({
   snapshot,
   className,
   weather = "clear",
+  season = "summer",
   pulseSignal,
 }: WorldSceneProps) {
   const prefersStillness = usePrefersStillness();
   const { tree, garden, pond, wildlife } = snapshot;
+  const palette = SEASON_PALETTES[season];
 
   const raindrops = useMemo(() => {
-    if (weather !== "rain") return [];
+    if (weather !== "rain" || season === "winter") return [];
 
     const count = 26;
     const values = seededSequence(`${worldId}:rain`, count * 3);
@@ -80,7 +146,38 @@ export function WorldScene({
       duration: 0.7 + values[index * 3 + 1] * 0.6,
       delay: values[index * 3 + 2] * 2,
     }));
-  }, [worldId, weather]);
+  }, [worldId, weather, season]);
+
+  // Winter's precipitation reads as snow rather than rain — same seeded
+  // stability, a slower and gentler fall.
+  const snowflakes = useMemo(() => {
+    if (weather !== "rain" || season !== "winter") return [];
+
+    const count = 22;
+    const values = seededSequence(`${worldId}:snow`, count * 3);
+
+    return Array.from({ length: count }, (_, index) => ({
+      x: values[index * 3] * 100,
+      duration: 4.5 + values[index * 3 + 1] * 3.5,
+      delay: values[index * 3 + 2] * 5,
+    }));
+  }, [worldId, weather, season]);
+
+  // A handful of leaves drifting down on a calm autumn day — ambient rather
+  // than a weather condition, so it only shows on days with no rain of its
+  // own to compete with.
+  const leaves = useMemo(() => {
+    if (season !== "autumn" || weather === "rain") return [];
+
+    const count = 9;
+    const values = seededSequence(`${worldId}:leaves`, count * 3);
+
+    return Array.from({ length: count }, (_, index) => ({
+      x: values[index * 3] * 100,
+      duration: 6 + values[index * 3 + 1] * 4,
+      delay: values[index * 3 + 2] * 8,
+    }));
+  }, [worldId, weather, season]);
 
   const flowers = useMemo(() => {
     const values = seededSequence(`${worldId}:flowers`, garden.flowers * 3);
@@ -124,8 +221,8 @@ export function WorldScene({
       >
         <defs>
           <linearGradient id="ss-ground" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--palette-moss-500)" />
-            <stop offset="100%" stopColor="var(--palette-moss-700)" />
+            <stop offset="0%" stopColor={palette.groundFrom} />
+            <stop offset="100%" stopColor={palette.groundTo} />
           </linearGradient>
 
           <radialGradient id="ss-pond" cx="50%" cy="35%" r="75%">
@@ -134,7 +231,7 @@ export function WorldScene({
           </radialGradient>
         </defs>
 
-        {/* Ground */}
+        {/* Ground — recolours with the season (see `SEASON_PALETTES`). */}
         <path
           d="M0,68 C18,60 34,63 50,65 C66,67 82,60 100,64 L100,100 L0,100 Z"
           fill="url(#ss-ground)"
@@ -144,7 +241,7 @@ export function WorldScene({
         {garden.undergrowth > 0.15 ? (
           <path
             d="M0,72 C20,66 36,70 52,71 C68,72 84,66 100,70 L100,100 L0,100 Z"
-            fill="var(--palette-moss-800)"
+            fill={palette.undergrowth}
             opacity={clamp01(garden.undergrowth * 0.5)}
           />
         ) : null}
@@ -204,6 +301,9 @@ export function WorldScene({
           label={tree.stage.label}
           meaning={tree.stage.meaning}
           still={prefersStillness}
+          canopyColours={palette.canopy}
+          canopyScale={palette.canopyScale}
+          canopyOpacity={palette.canopyOpacity}
         />
 
         {/* Garden */}
@@ -211,7 +311,7 @@ export function WorldScene({
           <title>The garden. Grown by the combined consistency of both of you.</title>
 
           {flowers.map((flower, index) => (
-            <FlowerGlyph key={index} {...flower} still={prefersStillness} />
+            <FlowerGlyph key={index} {...flower} still={prefersStillness} colours={palette.flowers} />
           ))}
         </g>
       </svg>
@@ -247,7 +347,7 @@ export function WorldScene({
         })}
       </div>
 
-      {weather === "rain" ? (
+      {weather === "rain" && season !== "winter" ? (
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           {prefersStillness ? (
             // Motion is off — a soft wash reads as "rain" without any movement.
@@ -267,6 +367,46 @@ export function WorldScene({
           )}
         </div>
       ) : null}
+
+      {/* Winter's rain reads as snow instead — same condition, a season apart. */}
+      {weather === "rain" && season === "winter" ? (
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          {prefersStillness ? (
+            <div className="absolute inset-0 bg-white/10" />
+          ) : (
+            snowflakes.map((flake, index) => (
+              <span
+                key={index}
+                className="absolute top-0 size-1.5 rounded-full bg-white/70"
+                style={{
+                  left: `${flake.x}%`,
+                  animation: `fall-drift ${flake.duration}s ease-in-out infinite`,
+                  animationDelay: `${flake.delay}s`,
+                }}
+              />
+            ))
+          )}
+        </div>
+      ) : null}
+
+      {/* A quiet handful of leaves, only on a calm autumn day with no rain of its own. */}
+      {leaves.length > 0 && !prefersStillness ? (
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          {leaves.map((leaf, index) => (
+            <span
+              key={index}
+              className="absolute top-0 size-1.5 rounded-full opacity-70"
+              style={{
+                left: `${leaf.x}%`,
+                backgroundColor:
+                  index % 2 === 0 ? "var(--palette-ember-400)" : "var(--palette-ember-600)",
+                animation: `fall-drift ${leaf.duration}s ease-in-out infinite`,
+                animationDelay: `${leaf.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -277,6 +417,9 @@ interface TreeGlyphProps {
   label: string;
   meaning: string;
   still: boolean;
+  canopyColours: readonly [string, string, string];
+  canopyScale: number;
+  canopyOpacity: number;
 }
 
 /**
@@ -289,10 +432,23 @@ interface TreeGlyphProps {
  * hover: a native `<title>` names its stage and what that stage means, and
  * (motion permitting) it settles slightly toward the viewer, the same small
  * acknowledgement `whileTap` gives a pressed button elsewhere.
+ *
+ * Its colour and canopy fullness also answer to the season — winter's
+ * `canopyScale`/`canopyOpacity` read as branches thinned rather than a full
+ * leaf canopy, without needing a second illustration.
  */
-function TreeGlyph({ fullness, stageIndex, label, meaning, still }: TreeGlyphProps) {
+function TreeGlyph({
+  fullness,
+  stageIndex,
+  label,
+  meaning,
+  still,
+  canopyColours,
+  canopyScale,
+  canopyOpacity,
+}: TreeGlyphProps) {
   const height = 8 + fullness * 30;
-  const canopyRadius = 4 + fullness * 13;
+  const canopyRadius = (4 + fullness * 13) * canopyScale;
   const trunkWidth = 1 + fullness * 2.2;
   const baseX = 32;
   const baseY = 68;
@@ -327,24 +483,26 @@ function TreeGlyph({ fullness, stageIndex, label, meaning, still }: TreeGlyphPro
         fill="var(--palette-bark-600)"
       />
 
-      <circle
-        cx={baseX}
-        cy={baseY - height - canopyRadius * 0.55}
-        r={canopyRadius}
-        fill="var(--palette-moss-500)"
-      />
-      <circle
-        cx={baseX - canopyRadius * 0.55}
-        cy={baseY - height - canopyRadius * 0.15}
-        r={canopyRadius * 0.72}
-        fill="var(--palette-moss-600)"
-      />
-      <circle
-        cx={baseX + canopyRadius * 0.6}
-        cy={baseY - height - canopyRadius * 0.1}
-        r={canopyRadius * 0.68}
-        fill="var(--palette-moss-400)"
-      />
+      <g opacity={canopyOpacity}>
+        <circle
+          cx={baseX}
+          cy={baseY - height - canopyRadius * 0.55}
+          r={canopyRadius}
+          fill={canopyColours[0]}
+        />
+        <circle
+          cx={baseX - canopyRadius * 0.55}
+          cy={baseY - height - canopyRadius * 0.15}
+          r={canopyRadius * 0.72}
+          fill={canopyColours[1]}
+        />
+        <circle
+          cx={baseX + canopyRadius * 0.6}
+          cy={baseY - height - canopyRadius * 0.1}
+          r={canopyRadius * 0.68}
+          fill={canopyColours[2]}
+        />
+      </g>
     </motion.g>
   );
 }
@@ -355,15 +513,10 @@ interface FlowerGlyphProps {
   scale: number;
   hue: number;
   still: boolean;
+  colours: readonly [string, string, string];
 }
 
-const FLOWER_COLOURS = [
-  "var(--palette-bloom-400)",
-  "var(--palette-ember-300)",
-  "var(--palette-paper-0)",
-];
-
-function FlowerGlyph({ x, y, scale, hue, still }: FlowerGlyphProps) {
+function FlowerGlyph({ x, y, scale, hue, still, colours }: FlowerGlyphProps) {
   const size = 0.9 * scale;
 
   return (
@@ -372,7 +525,7 @@ function FlowerGlyph({ x, y, scale, hue, still }: FlowerGlyphProps) {
       className={still ? undefined : "motion-safe:animate-(--animate-breathe)"}
       style={{ transformOrigin: "center", transformBox: "fill-box" }}
     >
-      <circle r={0.9} fill={FLOWER_COLOURS[hue]} opacity={0.9} />
+      <circle r={0.9} fill={colours[hue]} opacity={0.9} />
       <circle r={0.35} fill="var(--palette-ember-500)" />
     </g>
   );

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 
+import type { DateKey } from "../types/database";
 import type { Plan, PlanPeriod } from "../types/planning";
 import type { RitualEntry, RitualId } from "../types/ritual";
+import type { WorldDaySummary } from "../types/world";
 import { getPartnerUids } from "../services/pair";
 import {
   addIntention,
@@ -65,10 +67,14 @@ export function usePlan(period: PlanPeriod, periodKey: string) {
  * Loads the period's entries and the previous period's (for the
  * "most improved" comparison) whenever the period changes, then generates the
  * reflection purely in memory — nothing about a reflection is stored.
+ *
+ * Takes the period's `plan` as a parameter rather than subscribing to it
+ * itself — `GrowthPeriod`, the only caller, already holds one live
+ * subscription via `usePlan`, and a second `useReflection`-owned
+ * subscription to that exact same path would just be a duplicate listener.
  */
-export function useReflection(period: PlanPeriod, periodKey: string) {
+export function useReflection(period: PlanPeriod, periodKey: string, plan: Plan | null) {
   const pair = useWorldStore((state) => state.pair);
-  const { plan } = usePlan(period, periodKey);
 
   const [entries, setEntries] = useState<RitualEntry[]>([]);
   const [previousEntries, setPreviousEntries] = useState<RitualEntry[]>([]);
@@ -263,4 +269,40 @@ export function useYearlyOverview(months = 12) {
   }, [pair?.worldId, months]);
 
   return { points, isLoading: loadedWorldId !== pair?.worldId };
+}
+
+/**
+ * A calendar month's day summaries — the data behind `MonthCalendar`.
+ *
+ * A one-time read per month, not a subscription: the same reasoning as
+ * `useYearlyOverview` applies even more directly here, since a person is
+ * very unlikely to sit staring at last month while it changes live. Loading
+ * state is derived from comparing `monthKey` against the month the data
+ * actually belongs to, so switching months never needs an imperative reset.
+ */
+export function useCalendarMonth(monthKey: string) {
+  const pair = useWorldStore((state) => state.pair);
+
+  const [history, setHistory] = useState<Record<DateKey, WorldDaySummary>>({});
+  const [loadedMonthKey, setLoadedMonthKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pair?.worldId) return;
+
+    let cancelled = false;
+    const { start, end } = periodRange(monthKey);
+
+    void getWorldHistory(pair.worldId, start, end).then((result) => {
+      if (cancelled) return;
+
+      setHistory(result);
+      setLoadedMonthKey(monthKey);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pair?.worldId, monthKey]);
+
+  return { history, isLoading: loadedMonthKey !== monthKey };
 }

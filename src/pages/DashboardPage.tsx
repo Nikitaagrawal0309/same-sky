@@ -7,6 +7,7 @@ import { CompletionChart } from "../components/world/CompletionChart";
 import { DomainShareBars } from "../components/world/DomainShareBars";
 import { EnergyChart } from "../components/world/EnergyChart";
 import { GrowthPeriod } from "../components/world/GrowthPeriod";
+import { MonthCalendar } from "../components/world/MonthCalendar";
 import { YearChart } from "../components/world/YearChart";
 import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
 import { Spinner } from "../components/ui/Icon";
@@ -165,6 +166,10 @@ export default function DashboardPage() {
           </div>
         </Card>
       ) : null}
+
+      <Card padding="md" className="mt-6">
+        <MonthCalendar />
+      </Card>
 
       <div className="mt-6">
         <GrowthPeriod />
