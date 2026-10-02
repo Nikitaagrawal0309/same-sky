@@ -7,6 +7,7 @@ import {
   initializeAuth,
   type Auth,
 } from "firebase/auth";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import { getDatabase, type Database } from "firebase/database";
 
 /**
@@ -68,6 +69,29 @@ function resolveAuth(): Auth {
   } catch {
     // Already initialised — a hot module reload re-executed this module.
     return getAuth(app);
+  }
+}
+
+/*
+  App Check: proves to Firebase that a request really comes from Same Sky
+  (not a script or a look-alike site reusing this public config). Uses an
+  invisible reCAPTCHA Enterprise check. The site key is public by design;
+  verification happens between Firebase and Google, with no secret in the app.
+
+  Started before any database or auth call so every request carries a token.
+  Does nothing until a site key is configured.
+*/
+const APP_CHECK_SITE_KEY: string =
+  import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY ?? "6Ld65dstAAAAAG7xduXyZw9_5VbZc4jSKVcwIFSJ";
+
+if (APP_CHECK_SITE_KEY && typeof window !== "undefined") {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch {
+    // Already initialised — a hot module reload re-executed this module.
   }
 }
 
