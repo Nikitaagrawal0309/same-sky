@@ -236,15 +236,14 @@ export type SkyPhase =
   | "night";
 
 /**
- * The weather over the world today.
+ * The weather over the world right now.
  *
- * Decorative and gentle by design — there is no storm system, only whether
- * today happens to be a rainy one. Same as the sky, it is personal: derived
- * from the viewer's own local day, not shared data, so it never needs a
- * network request or a location permission the product has no other reason
- * to ask for.
+ * Mirrors the real weather where the viewer is (see `services/weather.ts`).
+ * Like the sky it is personal: two partners in different cities each see
+ * their own weather over the same shared garden. Without a location it
+ * simply stays `"clear"`.
  */
-export type WeatherCondition = "clear" | "rain";
+export type WeatherCondition = "clear" | "cloudy" | "fog" | "rain" | "storm" | "snow";
 
 export interface SkyState {
   phase: SkyPhase;

@@ -24,11 +24,20 @@ import { RitualIcon } from "../ui/Icon";
  */
 
 const ACCENT_CLASSES = {
-  accent: "border-accent/40 bg-accent-soft",
-  water: "border-water/40 bg-water-soft",
-  ember: "border-ember/40 bg-ember-soft",
-  bloom: "border-bloom/40 bg-bloom-soft",
-  dusk: "border-dusk/40 bg-dusk-soft",
+  accent: "border-emerald-300/70 bg-linear-to-br from-emerald-100 to-lime-100 dark:from-emerald-900/60 dark:to-lime-900/40",
+  water: "border-sky-300/70 bg-linear-to-br from-sky-100 to-cyan-100 dark:from-sky-900/60 dark:to-cyan-900/40",
+  ember: "border-amber-300/70 bg-linear-to-br from-amber-100 to-orange-100 dark:from-amber-900/60 dark:to-orange-900/40",
+  bloom: "border-pink-300/70 bg-linear-to-br from-pink-100 to-rose-100 dark:from-pink-900/60 dark:to-rose-900/40",
+  dusk: "border-violet-300/70 bg-linear-to-br from-violet-100 to-indigo-100 dark:from-violet-900/60 dark:to-indigo-900/40",
+} as const;
+
+/** The round icon chip, coloured per ritual so the list reads at a glance. */
+const ICON_CLASSES = {
+  accent: "bg-linear-to-br from-emerald-300 to-lime-300 text-emerald-900",
+  water: "bg-linear-to-br from-sky-300 to-cyan-300 text-sky-900",
+  ember: "bg-linear-to-br from-amber-300 to-orange-300 text-amber-900",
+  bloom: "bg-linear-to-br from-pink-300 to-rose-300 text-pink-900",
+  dusk: "bg-linear-to-br from-violet-300 to-indigo-300 text-violet-900",
 } as const;
 
 export interface RitualCardProps {
@@ -75,27 +84,29 @@ export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualC
       onClick={() => void handlePress()}
       disabled={isPending}
       aria-pressed={honouredBySelf}
-      whileTap={prefersStillness ? undefined : { scale: 0.985 }}
+      whileTap={prefersStillness ? undefined : { scale: 0.97 }}
+      whileHover={prefersStillness ? undefined : { y: -3 }}
       className={cx(
-        "relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border p-4 text-left",
-        "transition-colors duration-300 ease-(--ease-calm)",
+        "relative flex w-full items-center gap-4 overflow-hidden rounded-3xl border-2 p-4 text-left",
+        "shadow-soft transition-[background-color,border-color,box-shadow] duration-300 ease-(--ease-calm) hover:shadow-lifted",
         "disabled:pointer-events-none",
         honouredBySelf
           ? ACCENT_CLASSES[definition.accent]
-          : "border-line bg-surface hover:border-line-strong hover:bg-surface-sunken",
+          : "border-white/80 bg-white/80 backdrop-blur-sm hover:border-white dark:border-white/10 dark:bg-white/5",
       )}
     >
       <span
         className={cx(
-          "grid size-11 shrink-0 place-items-center rounded-full",
-          honouredBySelf ? "bg-surface/70 text-ink" : "bg-surface-sunken text-ink-soft",
+          "grid size-12 shrink-0 place-items-center rounded-2xl shadow-sm transition-transform duration-300",
+          ICON_CLASSES[definition.accent],
+          honouredBySelf && "rotate-6 scale-105",
         )}
       >
         <RitualIcon name={definition.icon} />
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium text-ink">{definition.label}</span>
+        <span className="block truncate font-display text-[1.05rem] font-medium text-ink">{definition.label}</span>
 
         <span className="block truncate text-sm text-ink-soft">
           {honouredByPartner && !honouredBySelf && partnerName
@@ -109,8 +120,8 @@ export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualC
         className={cx(
           "grid size-7 shrink-0 place-items-center rounded-full border transition-colors duration-300",
           honouredBySelf
-            ? "border-transparent bg-ink text-canvas"
-            : "border-line-strong text-transparent",
+            ? "border-transparent bg-emerald-500 text-white shadow-md"
+            : "border-line-strong bg-white/60 text-transparent dark:bg-transparent",
         )}
       >
         <Check className="size-4" strokeWidth={2.5} />
@@ -126,7 +137,7 @@ export function RitualCard({ status, onHonour, onRelease, partnerName }: RitualC
         {celebrating && !prefersStillness ? (
           <motion.span
             aria-hidden
-            className="pointer-events-none absolute top-3 right-3 text-accent"
+            className="pointer-events-none absolute top-3 right-3 text-amber-400"
             initial={{ opacity: 0, y: 6, scale: 0.6 }}
             animate={{ opacity: [0, 1, 1, 0], y: -18, scale: 1 }}
             exit={{ opacity: 0 }}

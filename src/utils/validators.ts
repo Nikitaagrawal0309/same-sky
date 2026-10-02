@@ -37,6 +37,13 @@ function invalid(message: string): ValidationResult {
  */
 export const INVITE_CODE_LENGTH = 6;
 
+/**
+ * How long a Sky Link stays valid. Kept short so an old or overheard code
+ * can't be used to slip into a world later. Must match the 172800000 ms
+ * check in `database.rules.json`, which is what actually enforces it.
+ */
+export const INVITE_TTL_MS = 48 * 60 * 60 * 1000;
+
 export const INVITE_CODE_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 
 /**

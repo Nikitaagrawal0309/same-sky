@@ -6,12 +6,10 @@ import type {
   GardenState,
   PartnerContribution,
   PondState,
-  Season,
   SkyPhase,
   SkyState,
   TreeStage,
   TreeState,
-  WeatherCondition,
   WildlifePresence,
   WorldDaySummary,
   WorldSnapshot,
@@ -32,7 +30,6 @@ import {
   progressBetween,
   recordToArray,
   round,
-  seededRandom,
   sum,
 } from "../utils/helpers";
 import { getData, getRange, setData, subscribe, subscribeToRange, transactData } from "./database";
@@ -829,42 +826,6 @@ export function deriveSky(
     starsVisible: sunAltitude < -0.12,
     season: getSeason(now, hemisphere),
   };
-}
-
-/**
- * How likely a given local day is to be a rainy one, by season.
- *
- * Purely atmospheric — this has no connection to any real weather service,
- * which would mean either a location permission the product has no other
- * reason to ask for, or an external API dependency outside this pass's
- * remit. Shoulder seasons lean wetter, matching the general seasonal feeling
- * most temperate climates share, without claiming to model any one place.
- */
-const RAIN_CHANCE_BY_SEASON: Record<Season, number> = {
-  spring: 0.32,
-  summer: 0.12,
-  autumn: 0.28,
-  winter: 0.2,
-};
-
-/**
- * The weather over a world today.
- *
- * Seeded by the world's own id and the local calendar day, so it holds
- * steady from the moment someone opens the world until midnight, rather than
- * flickering between clear and rain on every render — and so each pair's
- * world develops its own quiet, private weather rather than sharing one
- * global forecast with every other world in the product.
- */
-export function deriveWeather(
-  worldId: string,
-  now: Date = new Date(),
-  hemisphere: Hemisphere = "northern",
-): WeatherCondition {
-  const season = getSeason(now, hemisphere);
-  const roll = seededRandom(`${worldId}:weather:${toDateKey(now)}`);
-
-  return roll < RAIN_CHANCE_BY_SEASON[season] ? "rain" : "clear";
 }
 
 /**

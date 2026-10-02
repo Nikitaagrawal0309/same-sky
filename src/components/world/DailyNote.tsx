@@ -1,88 +1,61 @@
 import { useState } from "react";
-import { Feather, Flame, Gem, Gift, Mail, MailOpen, type LucideIcon } from "lucide-react";
 
-import type { NoteVessel } from "../../types/note";
+import type { DailyNote, NoteVessel } from "../../types/note";
 import { NOTE_MAX_LENGTH } from "../../types/note";
+import type { TodayNotes } from "../../hooks/useNotes";
 import { playChime } from "../../services/audio";
-import { useTodayNotes } from "../../hooks/useNotes";
 import { validateNote } from "../../utils/validators";
 import { Button } from "../ui/Button";
-import { Card } from "../ui/Card";
+import { NaturePanel } from "../ui/NaturePanel";
 import { Dialog } from "../ui/Dialog";
 import { TextAreaField } from "../ui/Field";
 import { cx } from "../../utils/helpers";
+import { VESSELS } from "./vessels";
 
 /**
  * One note, waiting.
  *
  * The daily note is deliberately the smallest feature in the product: one
  * message, once a day, found rather than delivered. There is no thread to
- * scroll and no unread count anywhere else in the interface — the only trace
- * of it is this one quiet card.
+ * scroll and no unread count anywhere else in the interface.
+ *
+ * A waiting note's *presence* lives inside `WorldScene` itself now, not this
+ * card — see the note glyph there. This card still owns composing a note (the
+ * one interaction with no natural home in the scene) and the reveal dialog's
+ * content, but data-fetching and the reveal trigger live one level up in
+ * `WorldPage`, so there is exactly one subscription to today's notes, not two.
  */
 
-const VESSELS: ReadonlyArray<{ id: NoteVessel; icon: LucideIcon; label: string }> = [
-  { id: "letter", icon: Mail, label: "A letter" },
-  { id: "gift", icon: Gift, label: "A gift" },
-  { id: "lantern", icon: Flame, label: "A lantern" },
-  { id: "feather", icon: Feather, label: "A feather" },
-  { id: "stone", icon: Gem, label: "A stone" },
-];
+export interface DailyNoteCardProps {
+  mine: DailyNote | null;
+  fromPartner: DailyNote | null;
+  send: TodayNotes["send"];
+  revealOpen: boolean;
+  onCloseReveal: () => void;
+}
 
-export function DailyNoteCard() {
-  const { mine, fromPartner, send, open } = useTodayNotes();
-
+export function DailyNoteCard({
+  mine,
+  fromPartner,
+  send,
+  revealOpen,
+  onCloseReveal,
+}: DailyNoteCardProps) {
   const [composerOpen, setComposerOpen] = useState(false);
-  const [revealOpen, setRevealOpen] = useState(false);
-
   const waiting = fromPartner && fromPartner.openedAt === null;
-
-  async function handleReveal(): Promise<void> {
-    setRevealOpen(true);
-
-    if (waiting) {
-      playChime("note-opened");
-    }
-
-    await open();
-  }
 
   return (
     <>
-      <Card
-        padding="md"
-        className={cx(waiting && "border border-ember/30 bg-ember-soft")}
-      >
-        {fromPartner ? (
-          <button
-            type="button"
-            onClick={() => void handleReveal()}
-            className="flex w-full items-center gap-4 text-left"
-          >
-            {waiting ? (
-              <VesselGlyph vessel={fromPartner.vessel} />
-            ) : (
-              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-surface text-ink-faint">
-                <MailOpen aria-hidden className="size-5" strokeWidth={1.5} />
-              </span>
-            )}
+      <NaturePanel theme="blossom" eyebrow="a little love letter" title="Today's note">
+        <p className="text-[0.95rem] leading-relaxed text-ink-soft">
+          {fromPartner
+            ? waiting
+              ? "A note is waiting for you, somewhere in your world."
+              : "You've read today's note."
+            : "Nothing waiting from your person yet today."}
+        </p>
 
-            <span className="min-w-0 flex-1">
-              <span className="block text-[0.95rem] text-ink">
-                {waiting ? "A note is waiting for you" : "You've read today's note"}
-              </span>
-              <span className="block text-sm text-ink-faint">
-                {waiting ? "Tap to open it" : "Left for you today"}
-              </span>
-            </span>
-          </button>
-        ) : (
-          <p className="text-[0.95rem] leading-relaxed text-ink-soft">
-            Nothing waiting from your person yet today.
-          </p>
-        )}
-
-        <div className="mt-5 border-t border-line pt-4">
+        <div className="mt-5 border-t border-pink-200/70 pt-4 dark:border-pink-900/60">
           {mine ? (
             <p className="text-sm text-ink-faint">
               You left {vesselArticle(mine.vessel)} for them today.
@@ -93,14 +66,10 @@ export function DailyNoteCard() {
             </Button>
           )}
         </div>
-      </Card>
+      </NaturePanel>
 
       {fromPartner ? (
-        <Dialog
-          open={revealOpen}
-          onClose={() => setRevealOpen(false)}
-          title="A note, for you"
-        >
+        <Dialog open={revealOpen} onClose={onCloseReveal} title="A note, for you">
           <p className="text-lg leading-relaxed whitespace-pre-wrap text-ink">
             {fromPartner.body}
           </p>
@@ -121,17 +90,6 @@ function vesselArticle(vessel: NoteVessel): string {
 
   // Each label already reads as "a letter", "a gift" and so on.
   return entry?.label.toLowerCase() ?? "a note";
-}
-
-function VesselGlyph({ vessel }: { vessel: NoteVessel }) {
-  const entry = VESSELS.find((candidate) => candidate.id === vessel) ?? VESSELS[0];
-  const Icon = entry.icon;
-
-  return (
-    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-surface text-ink">
-      <Icon aria-hidden className="size-5" strokeWidth={1.5} />
-    </span>
-  );
 }
 
 interface NoteComposerProps {

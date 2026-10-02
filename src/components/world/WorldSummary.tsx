@@ -1,15 +1,14 @@
 import type { WorldSnapshot, WorldState } from "../../types/world";
 import { describeWorld } from "../../services/world";
-import { formatDuration } from "../../utils/date";
 import { formatPercent } from "../../utils/helpers";
+import { NaturePanel } from "../ui/NaturePanel";
 
 /**
  * A short account of where the world stands.
  *
- * Exactly one sentence of description and a small handful of figures — the
- * age of the world, the tree's stage, how evenly the two of you have grown.
- * Nothing here is phrased as a score, and nothing invites comparison against a
- * previous week.
+ * One sentence of description and, once there is any history, how evenly
+ * the two of you have grown. Nothing here is phrased as a score, and nothing
+ * invites comparison against a previous week.
  */
 export interface WorldSummaryProps {
   world: WorldState;
@@ -20,31 +19,21 @@ export function WorldSummary({ world, snapshot }: WorldSummaryProps) {
   const description = describeWorld(snapshot, world);
 
   return (
-    <div>
-      <p className="max-w-xl text-lg leading-relaxed text-ink">{description}</p>
+    <NaturePanel theme="forest" eyebrow="your world, right now">
+      <p className="mt-1 max-w-2xl font-display text-xl leading-relaxed text-green-950 sm:text-2xl dark:text-green-50">
+        {description}
+      </p>
 
-      <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-4">
-        <div>
-          <dt className="text-xs tracking-wide text-ink-faint uppercase">Your tree</dt>
-          <dd className="mt-1 text-[0.95rem] text-ink-soft">{snapshot.tree.stage.label}</dd>
+      {world.totalRituals > 0 ? (
+        <div className="mt-5 inline-flex items-center gap-3 rounded-full bg-white/80 py-2 pr-5 pl-2 shadow-soft dark:bg-white/10">
+          <span className="grid size-9 place-items-center rounded-full bg-linear-to-br from-pink-400 to-orange-400 text-sm font-bold text-white">
+            ♥
+          </span>
+          <span className="text-sm text-ink-soft">
+            Harmony <span className="font-display text-lg font-semibold text-ink">{formatPercent(snapshot.harmony)}</span>
+          </span>
         </div>
-
-        <div>
-          <dt className="text-xs tracking-wide text-ink-faint uppercase">Together</dt>
-          <dd className="mt-1 text-[0.95rem] text-ink-soft">
-            {formatDuration(snapshot.ageInDays)}
-          </dd>
-        </div>
-
-        {world.totalRituals > 0 ? (
-          <div>
-            <dt className="text-xs tracking-wide text-ink-faint uppercase">Harmony</dt>
-            <dd className="mt-1 text-[0.95rem] text-ink-soft">
-              {formatPercent(snapshot.harmony)}
-            </dd>
-          </div>
-        ) : null}
-      </dl>
-    </div>
+      ) : null}
+    </NaturePanel>
   );
 }

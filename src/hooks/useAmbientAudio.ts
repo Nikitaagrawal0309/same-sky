@@ -15,7 +15,7 @@ import { useAppearanceControls } from "./useTheme";
  * since gentle rain and distant thunder belong at any hour.
  */
 function resolveBed(phase: SkyState["phase"], weather: WeatherCondition): AmbientBedId {
-  return weather === "rain" ? "rain" : bedForSkyPhase(phase);
+  return weather === "rain" || weather === "storm" ? "rain" : bedForSkyPhase(phase);
 }
 
 /**

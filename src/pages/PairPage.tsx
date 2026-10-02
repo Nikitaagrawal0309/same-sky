@@ -34,6 +34,7 @@ const JOIN_MESSAGES: Record<Exclude<JoinPairOutcome["status"], "joined">, string
   "already-used": "Someone has already joined with that Sky Link. Ask your person for a new one.",
   "own-code": "That is your own Sky Link — send it to your person instead.",
   "already-paired": "You already belong to a world. Sign out first if you need to start again.",
+  expired: "That Sky Link has expired (they last 48 hours). Ask your person to open Same Sky for a fresh one.",
 };
 
 export default function PairPage() {

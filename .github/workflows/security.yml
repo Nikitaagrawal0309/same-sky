@@ -1,0 +1,35 @@
+name: Checks & security rules
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The Firebase emulator needs Java.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+      # Every attack in tests/rules must be blocked, and every normal app
+      # action must still be allowed, or this fails.
+      - run: npm run test:rules
+
+      # Known-vulnerable dependencies (reported, not blocking).
+      - run: npm audit --omit=dev --audit-level=critical
+        continue-on-error: true

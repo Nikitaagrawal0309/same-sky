@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { Download, LogOut, Share, SquarePlus } from "lucide-react";
 
 import { ROUTES } from "../app/constants";
 import type { Hemisphere, ThemePreference } from "../types/user";
 import { useAuthActions, useProfile } from "../hooks/useAuth";
 import { useAppearanceControls } from "../hooks/useTheme";
+import { useInstallPrompt } from "../hooks/useInstallPrompt";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
 import { Card, SectionHeading } from "../components/ui/Card";
@@ -36,6 +37,7 @@ export default function SettingsPage() {
   const profile = useProfile();
   const { signOut } = useAuthActions();
   const { preferences, update } = useAppearanceControls();
+  const installPrompt = useInstallPrompt();
 
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -69,6 +71,42 @@ export default function SettingsPage() {
             </div>
           </div>
         </Card>
+
+        {installPrompt.state !== "unsupported" ? (
+          <Card padding="md" className="bg-linear-to-br from-lime-100 via-emerald-50 to-teal-100 dark:from-emerald-950 dark:via-emerald-900/60 dark:to-teal-950">
+            <div className="flex items-start gap-4">
+              <img src="/icons/icon-192.png" alt="" className="size-14 shrink-0 rounded-2xl shadow-md" />
+
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg text-ink">Same Sky on your home screen</h2>
+
+                {installPrompt.state === "installed" ? (
+                  <p className="mt-1 text-sm text-ink-soft">Installed. Open it from your home screen any time. 🌱</p>
+                ) : installPrompt.state === "available" ? (
+                  <>
+                    <p className="mt-1 text-sm text-ink-soft">
+                      Opens full-screen like any other app, and starts up even on a shaky connection.
+                    </p>
+                    <Button className="mt-4" icon={<Download aria-hidden className="size-4" />} onClick={() => void installPrompt.install()}>
+                      Install Same Sky
+                    </Button>
+                  </>
+                ) : (
+                  <ol className="mt-2 space-y-1.5 text-sm text-ink-soft">
+                    <li className="flex items-center gap-2">
+                      <span className="font-semibold text-ink">1.</span> Tap
+                      <Share aria-label="Share" className="size-4 text-sky-600" /> Share in Safari
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="font-semibold text-ink">2.</span> Choose
+                      <SquarePlus aria-hidden className="size-4 text-sky-600" /> <span className="font-semibold">Add to Home Screen</span>
+                    </li>
+                  </ol>
+                )}
+              </div>
+            </div>
+          </Card>
+        ) : null}
 
         <Card padding="md">
           <h2 className="text-lg text-ink">Appearance</h2>

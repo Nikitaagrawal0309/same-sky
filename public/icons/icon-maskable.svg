@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="30%" cy="22%" r="95%">
+      <stop offset="0" stop-color="#4be04b"/>
+      <stop offset="0.5" stop-color="#14a820"/>
+      <stop offset="1" stop-color="#066b12"/>
+    </radialGradient>
+    <radialGradient id="sproutCap" cx="32%" cy="25%" r="85%">
+      <stop offset="0" stop-color="#e4ff6b"/>
+      <stop offset="0.55" stop-color="#9bdc1f"/>
+      <stop offset="1" stop-color="#4f9a12"/>
+    </radialGradient>
+    <radialGradient id="sproutBelly" cx="35%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#fff6b0"/>
+      <stop offset="0.55" stop-color="#ffc93c"/>
+      <stop offset="1" stop-color="#e2931c"/>
+    </radialGradient>
+    <radialGradient id="bloomCap" cx="32%" cy="25%" r="85%">
+      <stop offset="0" stop-color="#ffd6ea"/>
+      <stop offset="0.55" stop-color="#ff8cc0"/>
+      <stop offset="1" stop-color="#d4558f"/>
+    </radialGradient>
+    <radialGradient id="bloomBelly" cx="35%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#fff1e6"/>
+      <stop offset="0.55" stop-color="#ffc6a8"/>
+      <stop offset="1" stop-color="#e8957a"/>
+    </radialGradient>
+    <clipPath id="sproutBody"><circle cx="186" cy="282" r="78"/></clipPath>
+    <clipPath id="bloomBody"><circle cx="326" cy="282" r="78"/></clipPath>
+    <radialGradient id="glow"><stop offset="0" stop-color="#fffab4" stop-opacity="0.4"/><stop offset="1" stop-color="#fffab4" stop-opacity="0"/></radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <ellipse cx="150" cy="110" rx="230" ry="170" fill="url(#glow)"/>
+
+  <!-- soft shadows -->
+  <ellipse cx="200" cy="300" rx="80" ry="78" fill="#043d0a" opacity="0.35"/>
+  <ellipse cx="340" cy="300" rx="80" ry="78" fill="#043d0a" opacity="0.35"/>
+
+  <!-- feet -->
+  <g fill="#ffcf4d"><rect x="150" y="344" width="26" height="30" rx="13"/><rect x="196" y="344" width="26" height="30" rx="13"/></g>
+  <g fill="#ffcbb0"><rect x="290" y="344" width="26" height="30" rx="13"/><rect x="336" y="344" width="26" height="30" rx="13"/></g>
+
+  <!-- Sprout -->
+  <circle cx="186" cy="282" r="78" fill="url(#sproutBelly)"/>
+  <g clip-path="url(#sproutBody)">
+    <path d="M100,180 L272,180 L272,282 Q255,300 238,282 Q221,300 204,282 Q187,300 170,282 Q153,300 136,282 Q119,300 100,282 Z" fill="url(#sproutCap)"/>
+  </g>
+  <path d="M186,206 L186,190" stroke="#3d7d0e" stroke-width="7" stroke-linecap="round"/>
+  <path d="M186,192 C168,166 144,174 148,190 C158,200 176,198 186,192 Z" fill="#3f9a12"/>
+  <path d="M186,190 C204,162 230,170 226,188 C216,199 196,197 186,190 Z" fill="#5cb81a"/>
+  <path d="M160,248 Q170,257 180,248" stroke="#2a3d10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M192,248 Q202,257 212,248" stroke="#2a3d10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M178,266 Q186,273 194,266" stroke="#2a3d10" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <ellipse cx="150" cy="264" rx="10" ry="6" fill="#ff6f91" opacity="0.45"/>
+  <ellipse cx="222" cy="264" rx="10" ry="6" fill="#ff6f91" opacity="0.45"/>
+
+  <!-- Bloom -->
+  <circle cx="326" cy="282" r="78" fill="url(#bloomBelly)"/>
+  <g clip-path="url(#bloomBody)">
+    <path d="M240,180 L412,180 L412,282 Q395,300 378,282 Q361,300 344,282 Q327,300 310,282 Q293,300 276,282 Q259,300 240,282 Z" fill="url(#bloomCap)"/>
+  </g>
+  <g transform="translate(326 204)">
+    <ellipse cy="-13" rx="10" ry="14" fill="#fff"/>
+    <ellipse cy="-13" rx="10" ry="14" fill="#fff" transform="rotate(72)"/>
+    <ellipse cy="-13" rx="10" ry="14" fill="#fff" transform="rotate(144)"/>
+    <ellipse cy="-13" rx="10" ry="14" fill="#fff" transform="rotate(216)"/>
+    <ellipse cy="-13" rx="10" ry="14" fill="#fff" transform="rotate(288)"/>
+    <circle r="9" fill="#ffcf3f"/>
+  </g>
+  <path d="M300,248 Q310,257 320,248" stroke="#2a3d10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M332,248 Q342,257 352,248" stroke="#2a3d10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M318,266 Q326,273 334,266" stroke="#2a3d10" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <ellipse cx="290" cy="264" rx="10" ry="6" fill="#ff6f91" opacity="0.45"/>
+  <ellipse cx="362" cy="264" rx="10" ry="6" fill="#ff6f91" opacity="0.45"/>
+
+  <!-- hands held -->
+  <circle cx="248" cy="300" r="17" fill="#ffcf4d"/>
+  <circle cx="264" cy="300" r="17" fill="#ffcbb0"/>
+
+  <!-- heart -->
+  <path d="M256,150 C246,138 230,146 240,160 L256,174 L272,160 C282,146 266,138 256,150 Z" fill="#ff5c8a"/>
+</svg>

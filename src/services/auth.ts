@@ -36,6 +36,27 @@ export async function signInWithGoogle(): Promise<User> {
 
 export async function logout(): Promise<void> {
   await signOut(auth);
+  clearPersonalDeviceData();
+}
+
+/**
+ * Remove personal data this app kept on the device — moods, the garden's
+ * on-device copy and the last weather location — so the next person to use
+ * a shared phone or laptop finds nothing of yours. Appearance preferences
+ * (theme, sound) are not personal and are kept.
+ */
+function clearPersonalDeviceData(): void {
+  const personalPrefixes = ["same-sky:moods:", "same-sky:garden:", "same-sky:live-weather", "same-sky:intro-seen"];
+
+  try {
+    for (const storage of [localStorage, sessionStorage]) {
+      for (const key of Object.keys(storage)) {
+        if (personalPrefixes.some((prefix) => key.startsWith(prefix))) storage.removeItem(key);
+      }
+    }
+  } catch {
+    /* Storage blocked — nothing was stored then. */
+  }
 }
 
 /**

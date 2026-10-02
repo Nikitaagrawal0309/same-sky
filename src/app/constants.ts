@@ -99,6 +99,13 @@ export const PATHS = {
 
   timeline: (worldId: string) => `timeline/${worldId}`,
   timelineEvent: (worldId: string, eventId: string) => `timeline/${worldId}/${eventId}`,
+
+  /** Daily mood check-ins, `moods/{worldId}/{date}/{uid}`. */
+  moods: (worldId: string) => `moods/${worldId}`,
+  moodEntry: (worldId: string, date: DateKey, uid: string) => `moods/${worldId}/${date}/${uid}`,
+
+  /** The shared, sown garden: which seed sits in which plot, and its weather. */
+  garden: (worldId: string) => `gardens/${worldId}`,
 } as const;
 
 /* -------------------------------------------------------------------------
@@ -118,6 +125,16 @@ export const STORAGE_KEYS = {
   ambientAudio: "same-sky:ambient-audio",
   ambientVolume: "same-sky:ambient-volume",
   hemisphere: "same-sky:hemisphere",
+
+  /**
+   * On-device copies of moods and the garden, used only if the database
+   * refuses those paths (for example before its security rules are updated).
+   */
+  moodsFallback: (worldId: string) => `same-sky:moods:${worldId}`,
+  gardenFallback: (worldId: string) => `same-sky:garden:${worldId}`,
+
+  /** Last live-weather reading and rounded location, so a revisit paints the right sky at once. */
+  liveWeather: "same-sky:live-weather",
 } as const;
 
 /* -------------------------------------------------------------------------

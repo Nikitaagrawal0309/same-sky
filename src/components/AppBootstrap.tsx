@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { useAppearance } from "../hooks/useTheme";
 import { useAuthStore } from "../store/authStore";
+import { IntroSplash } from "./intro/IntroSplash";
 
 interface Props {
   children: ReactNode;
@@ -27,5 +28,14 @@ export default function AppBootstrap({ children }: Props) {
 
   useAppearance();
 
-  return <>{children}</>;
+  // The intro holds until the saved session has been replayed, so the first
+  // screen behind it is already the right one.
+  const authResolved = useAuthStore((state) => state.status !== "resolving");
+
+  return (
+    <>
+      {children}
+      <IntroSplash ready={authResolved} />
+    </>
+  );
 }

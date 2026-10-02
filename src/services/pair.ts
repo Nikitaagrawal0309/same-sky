@@ -6,7 +6,7 @@ import type {
   PairInvite,
 } from "../types/pair";
 import type { UserProfile } from "../types/user";
-import { INVITE_CODE_LENGTH, normaliseInviteCode } from "../utils/validators";
+import { INVITE_CODE_LENGTH, INVITE_TTL_MS, normaliseInviteCode } from "../utils/validators";
 import { getData, reserveChildKey, setData, subscribe, updateData } from "./database";
 import { recordEvent } from "./timeline";
 import { ensureWorld } from "./world";
@@ -88,7 +88,7 @@ export async function createPair({ ownerUid }: CreatePairPayload): Promise<Pair>
     const existingPair = await getData<Pair>(PATHS.pair(existingProfile.pairId));
 
     if (existingPair) {
-      return existingPair;
+      return existingPair.partnerB ? existingPair : refreshInviteIfExpired(existingPair, ownerUid);
     }
   }
 
@@ -134,6 +134,31 @@ export async function createPair({ ownerUid }: CreatePairPayload): Promise<Pair>
   return pair;
 }
 
+/** Whether a Sky Link is past its 48-hour lifetime. */
+export function isInviteExpired(invite: Pick<PairInvite, "createdAt">, now = Date.now()): boolean {
+  return now - invite.createdAt > INVITE_TTL_MS;
+}
+
+/**
+ * A pending pair whose Sky Link has expired gets a fresh one, so the person
+ * waiting for their partner is never stuck holding a dead code.
+ */
+async function refreshInviteIfExpired(pair: Pair, ownerUid: string): Promise<Pair> {
+  const current = await getData<PairInvite>(PATHS.inviteCode(pair.inviteCode));
+
+  if (current && !current.used && !isInviteExpired(current)) {
+    return pair;
+  }
+
+  const inviteCode = await reserveInviteCode();
+  const invite: PairInvite = { inviteCode, ownerUid, pairId: pair.id, used: false, createdAt: Date.now() };
+
+  await setData(PATHS.inviteCode(inviteCode), invite);
+  await updateData<Pair>(PATHS.pair(pair.id), { inviteCode });
+
+  return { ...pair, inviteCode };
+}
+
 export async function getInvite(inviteCode: string): Promise<PairInvite | null> {
   return getData<PairInvite>(PATHS.inviteCode(normaliseInviteCode(inviteCode)));
 }
@@ -150,7 +175,8 @@ export type JoinPairOutcome =
   | { status: "unknown-code" }
   | { status: "already-used" }
   | { status: "own-code" }
-  | { status: "already-paired" };
+  | { status: "already-paired" }
+  | { status: "expired" };
 
 /**
  * Accept an invitation and step into the shared world.
@@ -190,6 +216,10 @@ export async function joinPair({
 
   if (invite.used && pair.partnerB !== joiningUid) {
     return { status: "already-used" };
+  }
+
+  if (isInviteExpired(invite) && pair.partnerB !== joiningUid) {
+    return { status: "expired" };
   }
 
   const joined: Pair = { ...pair, partnerB: joiningUid, status: "active" };

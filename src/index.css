@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* `dark:` follows the app's own theme switch rather than the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ==========================================================================
    Same Sky — Design Foundation
 
@@ -242,10 +245,10 @@
 
   /* Typography — display carries the emotional voice, sans carries the UI */
   --font-display:
-    "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
-    "Times New Roman", serif;
+    "Fredoka", "Baloo 2", "Trebuchet MS", ui-rounded, system-ui, sans-serif;
+  --font-hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
   --font-sans:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "Nunito", ui-rounded, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   --font-mono:
     "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
@@ -278,6 +281,14 @@
   --animate-rise: rise 0.7s var(--ease-settle) both;
   --animate-fade-in: fade-in 0.5s var(--ease-calm) both;
   --animate-shimmer: shimmer 2.4s var(--ease-breath) infinite;
+  --animate-sway: sway 4.5s var(--ease-breath) infinite;
+  --animate-sway-slow: sway 7s var(--ease-breath) infinite;
+  --animate-cloud: cloud-drift 90s linear infinite;
+  --animate-sun-rays: sun-rays 40s linear infinite;
+  --animate-float: float 6s var(--ease-breath) infinite;
+  --animate-wiggle: wiggle 2.8s var(--ease-breath) infinite;
+  --animate-pop-in: pop-in 0.6s var(--ease-settle) both;
+  --animate-gradient: gradient-pan 14s var(--ease-breath) infinite;
 }
 
 /*
@@ -309,6 +320,106 @@
   }
   100% {
     transform: translate(-4px, 110%);
+  }
+}
+
+/* Grass blades, plants and reeds bending in a breeze. Origin is set per element. */
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes cloud-drift {
+  from {
+    transform: translate3d(-30vw, 0, 0);
+  }
+  to {
+    transform: translate3d(130vw, 0, 0);
+  }
+}
+
+@keyframes sun-rays {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(-6deg);
+  }
+  40% {
+    transform: rotate(5deg);
+  }
+  60% {
+    transform: rotate(-2deg);
+  }
+  80% {
+    transform: rotate(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes gradient-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* A bird's wings: one flap, scaled vertically around the body. */
+@keyframes wing-flap {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(-0.55);
+  }
+}
+
+/* Water shimmer on the pond surface. */
+@keyframes glint {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scaleX(0.7);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scaleX(1.1);
   }
 }
 
@@ -374,6 +485,8 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* No grey flash on tap; buttons have their own pressed states. */
+    -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
     text-rendering: optimizeLegibility;
   }
@@ -395,8 +508,8 @@
   h2,
   h3 {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.015em;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     text-wrap: balance;
   }
 
@@ -427,6 +540,15 @@
 
   textarea {
     field-sizing: content;
+  }
+
+  /* iOS zooms into any field under 16px when it is focused; keep them at 16px on phones. */
+  @media (max-width: 639px) {
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1em);
+    }
   }
 
   ::-webkit-scrollbar {
@@ -478,6 +600,23 @@
     .ss-container {
       padding-inline: 2rem;
     }
+  }
+
+  /* Handwritten accent text — little notes in the margins. */
+  .ss-hand {
+    font-family: var(--font-hand);
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  /* Multi-stop gradient text for playful headings. */
+  .ss-gradient-text {
+    background-image: linear-gradient(90deg, #16a34a, #0ea5e9, #f59e0b, #ec4899, #16a34a);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: var(--animate-gradient);
   }
 
   /* Screen-reader-only content that becomes visible on focus. */

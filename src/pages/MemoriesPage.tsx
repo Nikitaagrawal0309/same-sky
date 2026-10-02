@@ -10,7 +10,8 @@ import { prepareMemoryImage } from "../services/storage";
 import { usePrefersStillness } from "../hooks/useTheme";
 import { validateImageFile, validateMemory } from "../utils/validators";
 import { Button } from "../components/ui/Button";
-import { Card, EmptyState, SectionHeading } from "../components/ui/Card";
+import { Card, EmptyState } from "../components/ui/Card";
+import { PhotoCollage } from "../components/memories/PhotoCollage";
 import { Dialog } from "../components/ui/Dialog";
 import { TextAreaField, TextField } from "../components/ui/Field";
 import { formatFullDate, formatRelativeDay, todayKey } from "../utils/date";
@@ -28,34 +29,51 @@ export default function MemoriesPage() {
   const [viewing, setViewing] = useState<Memory | null>(null);
 
   return (
-    <div className="ss-container max-w-3xl py-12 motion-safe:animate-(--animate-fade-in)">
-      <SectionHeading
-        level={1}
-        title="Memories"
-        description="The moments the two of you chose to keep."
-        action={<Button onClick={() => setComposerOpen(true)}>Save a memory</Button>}
-      />
+    <div className="relative isolate min-h-[calc(100svh-4rem)]">
+      <PhotoCollage className="-z-10" />
 
-      <div className="mt-10">
-        {memories.length === 0 ? (
-          <EmptyState
-            icon={<Images aria-hidden className="size-8" strokeWidth={1.3} />}
-            title="Nothing saved yet"
-            description="A photo, a moment, a first — anything worth finding again."
-            action={<Button onClick={() => setComposerOpen(true)}>Save your first memory</Button>}
-          />
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {memories.map((memory) => (
-              <MemoryTile key={memory.id} memory={memory} onOpen={() => setViewing(memory)} />
-            ))}
+      <div className="ss-container max-w-3xl py-12 motion-safe:animate-(--animate-fade-in)">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="ss-hand text-2xl text-pink-500">pinned to our wall</p>
+            <h1 className="ss-gradient-text font-display text-5xl font-bold sm:text-6xl">
+              Memories
+            </h1>
+            <p className="mt-2 text-[0.95rem] text-ink-soft">
+              The moments the two of you chose to keep.
+            </p>
           </div>
-        )}
+          <Button size="lg" onClick={() => setComposerOpen(true)}>
+            <ImagePlus aria-hidden className="size-4" />
+            Save a memory
+          </Button>
+        </header>
+
+        <div className="mt-10">
+          {memories.length === 0 ? (
+            <div className="rounded-[2rem] border-2 border-white/80 bg-white/75 shadow-lifted backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
+              <EmptyState
+                icon={<Images aria-hidden className="size-10 text-pink-400" strokeWidth={1.3} />}
+                title="Your wall is waiting for photos"
+                description="A photo, a moment, a first — anything worth finding again. Every one you save is pinned here."
+                action={
+                  <Button onClick={() => setComposerOpen(true)}>Save your first memory</Button>
+                }
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {memories.map((memory) => (
+                <MemoryTile key={memory.id} memory={memory} onOpen={() => setViewing(memory)} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <MemoryComposer open={composerOpen} onClose={() => setComposerOpen(false)} onSave={save} />
+
+        <MemoryDetail memory={viewing} onClose={() => setViewing(null)} />
       </div>
-
-      <MemoryComposer open={composerOpen} onClose={() => setComposerOpen(false)} onSave={save} />
-
-      <MemoryDetail memory={viewing} onClose={() => setViewing(null)} />
     </div>
   );
 }
@@ -79,12 +97,7 @@ function MemoryTile({ memory, onOpen }: { memory: Memory; onOpen: () => void }) 
       >
         <div className="aspect-square bg-surface-sunken">
           {memory.image ? (
-            <img
-              src={memory.image.data}
-              alt=""
-              loading="lazy"
-              className="size-full object-cover"
-            />
+            <img src={memory.image.data} alt="" loading="lazy" className="size-full object-cover" />
           ) : (
             <div className="grid size-full place-items-center text-ink-faint">
               <Images aria-hidden className="size-8" strokeWidth={1.2} />
@@ -134,7 +147,9 @@ function MemoryDetail({ memory, onClose }: { memory: Memory | null; onClose: () 
           {memory.story ? (
             <p className="leading-relaxed whitespace-pre-wrap text-ink-soft">{memory.story}</p>
           ) : (
-            <p className="text-sm text-ink-faint">No story was written for this one — just the moment itself.</p>
+            <p className="text-sm text-ink-faint">
+              No story was written for this one — just the moment itself.
+            </p>
           )}
         </div>
       ) : null}
@@ -207,7 +222,13 @@ function MemoryComposer({ open, onClose, onSave }: MemoryComposerProps) {
     setIsSaving(true);
 
     try {
-      await onSave({ title, story: story.trim() || null, date: todayKey(), kind, image });
+      await onSave({
+        title,
+        story: story.trim() || null,
+        date: todayKey(),
+        kind,
+        image,
+      });
       playChime("memory-saved");
       reset();
       onClose();

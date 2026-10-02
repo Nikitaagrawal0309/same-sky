@@ -500,3 +500,196 @@ export function playChime(kind: ChimeKind): void {
     oscillator.stop(startAt + duration + 0.05);
   }
 }
+
+/**
+ * A small songbird's chirrup — two or three quick, rising whistles.
+ *
+ * Synthesised like everything else here: a sine voice swept upward with a
+ * fast vibrato, so it reads as a bird rather than a tone. Follows the same
+ * preference as the chimes, and like them is only ever called from something
+ * a person did (tapping a bird) or while ambient sound is already on.
+ */
+export function playBirdChirp(pitch = 1): void {
+  if (!chimesEnabled) return;
+
+  const context = getAudioContext();
+
+  if (!context) return;
+
+  void context.resume();
+
+  const now = context.currentTime;
+  const notes = 2 + Math.floor(Math.random() * 2);
+  const base = 2600 * pitch;
+
+  for (let index = 0; index < notes; index += 1) {
+    const startAt = now + index * 0.11;
+    const duration = 0.075 + Math.random() * 0.03;
+
+    const oscillator = context.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(base * (0.85 + Math.random() * 0.1), startAt);
+    oscillator.frequency.exponentialRampToValueAtTime(base * (1.35 + index * 0.08), startAt + duration);
+
+    const vibrato = context.createOscillator();
+    vibrato.frequency.setValueAtTime(42, startAt);
+    const vibratoDepth = context.createGain();
+    vibratoDepth.gain.setValueAtTime(base * 0.04, startAt);
+    vibrato.connect(vibratoDepth);
+    vibratoDepth.connect(oscillator.frequency);
+
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(0, startAt);
+    gain.gain.linearRampToValueAtTime(0.07 * chimeVolume, startAt + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+
+    oscillator.start(startAt);
+    vibrato.start(startAt);
+    oscillator.stop(startAt + duration + 0.02);
+    vibrato.stop(startAt + duration + 0.02);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Opening intro
+   ------------------------------------------------------------------------- */
+
+/**
+ * Whether sound can play right now without a fresh gesture. Browsers keep a
+ * new audio context suspended until someone has interacted with the page.
+ */
+export async function audioIsUnlocked(): Promise<boolean> {
+  const context = getAudioContext();
+
+  if (!context) return false;
+
+  try {
+    await Promise.race([context.resume(), new Promise((resolve) => setTimeout(resolve, 250))]);
+  } catch {
+    return false;
+  }
+
+  return context.state === "running";
+}
+
+/** A soft voice: one sine note with a gentle attack and long tail. */
+function softNote(context: AudioContext, frequency: number, startAt: number, duration: number, peak: number): void {
+  const oscillator = context.createOscillator();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(frequency, startAt);
+
+  const gain = context.createGain();
+  gain.gain.setValueAtTime(0, startAt);
+  gain.gain.linearRampToValueAtTime(peak, startAt + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(startAt);
+  oscillator.stop(startAt + duration + 0.05);
+}
+
+/**
+ * The meadow waking up: a warm low pad swelling in under a few high,
+ * glassy sparkles, like light catching dew. Quiet and over in two seconds.
+ */
+export function playIntroBloom(): void {
+  if (!chimesEnabled) return;
+
+  const context = getAudioContext();
+
+  if (!context || context.state !== "running") return;
+
+  const now = context.currentTime;
+  const volume = 0.12 * chimeVolume;
+
+  // Pad: C4 + G4, slow swell.
+  for (const frequency of [261.63, 392]) {
+    const oscillator = context.createOscillator();
+    oscillator.type = "triangle";
+    oscillator.frequency.setValueAtTime(frequency, now);
+
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(900, now);
+
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume * 0.7, now + 0.8);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
+
+    oscillator.connect(filter);
+    filter.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 2.5);
+  }
+
+  // Dew sparkles: E6, G6, C7.
+  [1318.5, 1568, 2093].forEach((frequency, index) => {
+    softNote(context, frequency, now + 0.35 + index * 0.16, 0.9, volume * 0.55);
+  });
+}
+
+/**
+ * Stepping into the world: an airy whoosh that rises like a breeze lifting
+ * you up, landing on the "Same Sky" signature, two bright notes a fourth
+ * apart (G5 → C6) with a soft shimmer above.
+ */
+export function playEnterSwoop(): void {
+  if (!chimesEnabled) return;
+
+  const context = getAudioContext();
+
+  if (!context) return;
+
+  void context.resume();
+
+  const now = context.currentTime;
+  const volume = chimeVolume;
+
+  // The whoosh: band-passed noise sweeping upward, swelling then gone.
+  const noise = context.createBufferSource();
+  noise.buffer = getNoiseBuffer(context);
+
+  const band = context.createBiquadFilter();
+  band.type = "bandpass";
+  band.Q.setValueAtTime(1.2, now);
+  band.frequency.setValueAtTime(250, now);
+  band.frequency.exponentialRampToValueAtTime(3200, now + 0.55);
+
+  const whoosh = context.createGain();
+  whoosh.gain.setValueAtTime(0.0001, now);
+  whoosh.gain.exponentialRampToValueAtTime(0.22 * volume, now + 0.32);
+  whoosh.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+
+  noise.connect(band);
+  band.connect(whoosh);
+  whoosh.connect(context.destination);
+  noise.start(now);
+  noise.stop(now + 0.75);
+
+  // A sine gliding up underneath, giving the swoop its lift.
+  const glide = context.createOscillator();
+  glide.type = "sine";
+  glide.frequency.setValueAtTime(330, now);
+  glide.frequency.exponentialRampToValueAtTime(990, now + 0.45);
+
+  const glideGain = context.createGain();
+  glideGain.gain.setValueAtTime(0.0001, now);
+  glideGain.gain.exponentialRampToValueAtTime(0.06 * volume, now + 0.2);
+  glideGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+  glide.connect(glideGain);
+  glideGain.connect(context.destination);
+  glide.start(now);
+  glide.stop(now + 0.55);
+
+  // The signature landing: "Same … Sky".
+  softNote(context, 783.99, now + 0.42, 0.7, 0.13 * volume);
+  softNote(context, 1046.5, now + 0.58, 1.3, 0.15 * volume);
+  softNote(context, 2093, now + 0.6, 0.9, 0.035 * volume);
+}

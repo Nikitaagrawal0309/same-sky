@@ -37,9 +37,9 @@ const DESTINATIONS: readonly Destination[] = [
   },
   {
     to: ROUTES.journal,
-    label: "Journal",
+    label: "Co-journal",
     icon: BookOpen,
-    description: "Your shared journal",
+    description: "Your shared co-journal and daily moods",
   },
   {
     to: ROUTES.memories,
