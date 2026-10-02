@@ -15,6 +15,7 @@ import {
 import { useWorldStore } from "../store/worldStore";
 import { useAmbientAudio } from "../hooks/useAmbientAudio";
 import { useLiveWeather } from "../hooks/useLiveWeather";
+import { useNightChimes } from "../hooks/useNightChimes";
 import { useAppearanceControls } from "../hooks/useTheme";
 import { useTodayNotes } from "../hooks/useNotes";
 import { RITUAL_CATALOGUE } from "../services/ritual";
@@ -71,6 +72,10 @@ export default function WorldPage() {
 
   useAmbientAudio(sky, weather);
 
+  // After dark: no birds, just the breeze and the odd wind chime.
+  const daylight = clamp01((sky.sunAltitude + 0.2) * 2.5);
+  useNightChimes(daylight < 0.35);
+
   async function handleRevealNote(): Promise<void> {
     setNoteRevealOpen(true);
 
@@ -123,7 +128,7 @@ export default function WorldPage() {
           weather={weather}
           weatherIntensity={live.weather?.intensity}
           season={sky.season}
-          daylight={clamp01((sky.sunAltitude + 0.2) * 2.5)}
+          daylight={daylight}
           pulseSignal={pulseSignal}
           noteFromPartner={
             hasPartner && noteFromPartner
@@ -202,7 +207,7 @@ export default function WorldPage() {
           <NaturePanel theme="blossom" eyebrow="saving a spot" title="Waiting for your person">
             <p className="max-w-prose text-[0.95rem] leading-relaxed text-ink-soft">
               Your world is open and already growing. It will feel different the
-              day your person joins — until then, everything you tend to here is
+              day your person joins. Until then, everything you grow here is
               waiting for them too.
             </p>
           </NaturePanel>

@@ -18,6 +18,8 @@ import type { Season, WeatherCondition, WildlifePresence, WorldSnapshot } from "
 import { usePrefersStillness } from "../../hooks/useTheme";
 import { clamp01, cx, seededSequence } from "../../utils/helpers";
 import { Birds } from "./Birds";
+import { MeadowOak, PerchingBirds } from "./MeadowOak";
+import { oakPerches } from "./birdData";
 import { PrecipitationCanvas } from "./PrecipitationCanvas";
 import { VESSELS } from "./vessels";
 
@@ -131,15 +133,26 @@ const MUD = { light: "#9a6b45", base: "#7d5333", dark: "#5c3a21" };
 /** The pond's centre in viewBox units. */
 const POND = { cx: 138, cy: 87 };
 
+/** The visiting birds' oak, behind the pond's left bank. */
+const OAK = { x: 121, y: 74 };
+
 /** The tree's base in viewBox units. */
 const TREE = { x: 76, y: 78 };
 
-/** A shared bottom-anchored sway, applied to grass, reeds and flowers. */
+/**
+ * A shared bottom-anchored sway, applied to grass, reeds and flowers.
+ *
+ * The keyframes and speed come from CSS variables the scene root sets, so at
+ * night every plant leans into the breeze (`sway-wind`, faster) without each
+ * glyph needing to know the time of day.
+ */
 function swayStyle(still: boolean, duration: number, delay: number): CSSProperties {
   return {
     transformBox: "fill-box",
     transformOrigin: "50% 100%",
-    animation: still ? undefined : `sway ${duration}s cubic-bezier(0.45,0,0.55,1) ${delay}s infinite`,
+    animation: still
+      ? undefined
+      : `var(--sway-name, sway) calc(${duration}s * var(--sway-speed, 1)) cubic-bezier(0.45,0,0.55,1) ${delay}s infinite`,
   };
 }
 
@@ -320,6 +333,8 @@ export function WorldScene({
           : "relative aspect-[16/11] w-full overflow-hidden rounded-3xl sm:aspect-[16/9]",
         className,
       )}
+      // Night breeze: every swaying plant reads these.
+      style={night ? ({ "--sway-name": "sway-wind", "--sway-speed": 0.6 } as CSSProperties) : undefined}
     >
       <svg
         viewBox="-30 0 260 100"
@@ -404,6 +419,10 @@ export function WorldScene({
         <MudPatch x={118} y={96} rx={6} ry={1.5} rainy={rainy} />
         <MudPatch x={168} y={80} rx={5} ry={1.2} rainy={rainy} />
         <MudPatch x={40} y={80} rx={4} ry={1} rainy={rainy} />
+
+        {/* A lush old oak behind the pond, where birds come to sit by day. */}
+        <MeadowOak x={OAK.x} y={OAK.y} still={still} colours={[palette.canopy[2], palette.canopy[0], palette.canopy[1]]} />
+        {!night ? <PerchingBirds perches={oakPerches(OAK.x, OAK.y)} still={still} /> : null}
 
         {/* Pond, with a muddy bank. */}
         <g opacity={0.45 + pond.level * 0.55}>
@@ -535,8 +554,7 @@ export function WorldScene({
 
         {/* Bushes, ferns and mushrooms at the meadow's edges. */}
         <Bush x={44} y={78} colours={palette.grass} berries={season === "summer" || season === "autumn"} />
-        <Bush x={110} y={75.5} colours={palette.grass} berries={false} small />
-        <Bush x={166} y={77} colours={palette.grass} berries={season !== "winter"} />
+                <Bush x={166} y={77} colours={palette.grass} berries={season !== "winter"} />
         <Fern x={58} y={80} colour={palette.grass[0]} still={still} />
         <Fern x={98} y={78} colour={palette.grass[2]} still={still} />
         <Fern x={155} y={94} colour={palette.grass[0]} still={still} />
@@ -622,7 +640,7 @@ export function WorldScene({
       {/* Wildlife renders as HTML rather than SVG so each creature can use a
           crisp vector icon and its own gentle motion. */}
       <div className="absolute inset-0">
-        <Birds seed={worldId} count={night ? 1 : 3} still={still} />
+        {night ? null : <Birds seed={worldId} count={3} still={still} />}
 
         {wildlife.map((presence, presenceIndex) => {
           const Icon = WILDLIFE_ICONS[presence.species];
@@ -927,7 +945,7 @@ function TreeGlyph({
         style={{
           transformBox: "fill-box",
           transformOrigin: "50% 100%",
-          animation: still ? undefined : "sway 9s cubic-bezier(0.45,0,0.55,1) infinite",
+          animation: still ? undefined : "var(--sway-name, sway) calc(9s * var(--sway-speed, 1)) cubic-bezier(0.45,0,0.55,1) infinite",
         }}
       >
         <circle cx={x - r * 0.7} cy={top - r * 0.1} r={r * 0.7} fill={canopyColours[1]} />

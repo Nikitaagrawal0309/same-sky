@@ -53,7 +53,13 @@ export type SeedId =
   | "cherry-tree"
   | "apple-tree"
   | "orange-tree"
-  | "mango-tree";
+  | "mango-tree"
+  | "pine-tree"
+  | "maple-tree"
+  | "willow-tree"
+  | "peach-tree"
+  | "lemon-tree"
+  | "moon-tree";
 
 export type PlantKind = "flower" | "bush" | "tree" | "fruit-tree";
 
@@ -78,6 +84,12 @@ export const SEEDS: readonly SeedDefinition[] = [
   { id: "apple-tree", name: "Apple tree", emoji: "🍎", kind: "fruit-tree", maturesAfter: 55, blurb: "Bears fruit once it's settled in." },
   { id: "orange-tree", name: "Orange tree", emoji: "🍊", kind: "fruit-tree", maturesAfter: 60, blurb: "Little suns on every branch." },
   { id: "mango-tree", name: "Mango tree", emoji: "🥭", kind: "fruit-tree", maturesAfter: 70, blurb: "The sweetest thing you'll grow together." },
+  { id: "pine-tree", name: "Pine", emoji: "🌲", kind: "tree", maturesAfter: 45, blurb: "Evergreen, like the habits you keep." },
+  { id: "maple-tree", name: "Maple", emoji: "🍁", kind: "tree", maturesAfter: 50, blurb: "Glows red and gold, all year round." },
+  { id: "willow-tree", name: "Willow", emoji: "🌿", kind: "tree", maturesAfter: 60, blurb: "Long, soft branches that sway in the breeze." },
+  { id: "peach-tree", name: "Peach tree", emoji: "🍑", kind: "fruit-tree", maturesAfter: 65, blurb: "Blush-pink fruit for two." },
+  { id: "lemon-tree", name: "Lemon tree", emoji: "🍋", kind: "fruit-tree", maturesAfter: 65, blurb: "Bright and zesty, like a good morning." },
+  { id: "moon-tree", name: "Moonlit tree", emoji: "🌙", kind: "tree", maturesAfter: 80, blurb: "A rare tree that holds a little moon." },
 ];
 
 export const STARTER_SEEDS: readonly SeedId[] = ["sunflower", "daisy", "tulip"];
@@ -106,7 +118,8 @@ export interface GardenState {
   weather?: GardenWeatherId;
 }
 
-export const GARDEN_PLOT_COUNT = 6;
+/** A 3 × 3 island, like a little floating meadow. */
+export const GARDEN_PLOT_COUNT = 9;
 
 /* -------------------------------------------------------------------------
    Badges
@@ -139,6 +152,12 @@ export const BADGES: readonly BadgeDefinition[] = [
   { id: "orange", name: "Orange tree", emoji: "🍊", kind: "fruit-tree", metric: "soloMonths", count: 2, unlocks: { type: "seed", seedId: "orange-tree" } },
   { id: "mango", name: "Mango tree", emoji: "🥭", kind: "fruit-tree", metric: "togetherMonths", count: 2, unlocks: { type: "seed", seedId: "mango-tree" } },
   { id: "aurora", name: "Aurora", emoji: "✨", kind: "weather", metric: "togetherMonths", count: 3, unlocks: { type: "weather", weatherId: "aurora" } },
+  { id: "evergreen", name: "Evergreen", emoji: "🌲", kind: "tree", metric: "soloWeeks", count: 6, unlocks: { type: "seed", seedId: "pine-tree" } },
+  { id: "maple", name: "Maple glow", emoji: "🍁", kind: "tree", metric: "togetherWeeks", count: 6, unlocks: { type: "seed", seedId: "maple-tree" } },
+  { id: "willow", name: "Willow", emoji: "🌿", kind: "tree", metric: "soloWeeks", count: 10, unlocks: { type: "seed", seedId: "willow-tree" } },
+  { id: "peach", name: "Peach orchard", emoji: "🍑", kind: "fruit-tree", metric: "togetherWeeks", count: 10, unlocks: { type: "seed", seedId: "peach-tree" } },
+  { id: "lemon", name: "Lemon grove", emoji: "🍋", kind: "fruit-tree", metric: "soloMonths", count: 3, unlocks: { type: "seed", seedId: "lemon-tree" } },
+  { id: "moon", name: "Moonlit tree", emoji: "🌙", kind: "tree", metric: "togetherMonths", count: 4, unlocks: { type: "seed", seedId: "moon-tree" } },
 ];
 
 export const BADGE_METRIC_LABELS: Record<BadgeMetric, { one: string; many: string }> = {

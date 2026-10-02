@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { playBirdChirp } from "../../services/audio";
 import { seededSequence } from "../../utils/helpers";
+import { PLUMAGE } from "./birdData";
 
 /**
  * Little birds that fly across the sky, flapping and smiling.
@@ -13,12 +14,7 @@ import { seededSequence } from "../../utils/helpers";
  * flock comes back each visit.
  */
 
-const PLUMAGE = [
-  { body: "#5ab4f0", belly: "#e6f6ff", wing: "#2f8ad1" },
-  { body: "#ffcd3c", belly: "#fff6d6", wing: "#f0a500" },
-  { body: "#ff8fab", belly: "#ffe8ee", wing: "#e85d84" },
-  { body: "#8ad672", belly: "#effbe8", wing: "#58ad40" },
-] as const;
+
 
 const CHIRPS = ["tweet!", "chirp ♪", "tweet tweet!", "♪ ♫", "hello!", "cheep!"];
 
@@ -159,10 +155,14 @@ interface BirdGlyphProps {
   plumage: (typeof PLUMAGE)[number];
   still: boolean;
   index: number;
+  /** `false` for a bird sitting on a branch: wings folded, no flapping. */
+  flapping?: boolean;
 }
 
 /** A round, happy little bird facing right (flipped when flying left). */
-export function BirdGlyph({ size, flip, plumage, still, index }: BirdGlyphProps) {
+export function BirdGlyph({ size, flip, plumage, still, index, flapping = true }: BirdGlyphProps) {
+  const flap = still || !flapping ? undefined : `wing-flap 0.32s ease-in-out ${index * 0.07}s infinite`;
+
   return (
     <svg
       width={size}
@@ -173,17 +173,19 @@ export function BirdGlyph({ size, flip, plumage, still, index }: BirdGlyphProps)
     >
       {/* Tail */}
       <path d="M14 22 L2 16 L5 24 L1 30 L15 27 Z" fill={plumage.wing} />
-      {/* Far wing (behind the body) */}
-      <path
-        d="M24 20 Q20 4 34 6 Q32 14 32 20 Z"
-        fill={plumage.wing}
-        opacity={0.6}
-        style={{
-          transformBox: "fill-box",
-          transformOrigin: "50% 100%",
-          animation: still ? undefined : `wing-flap 0.32s ease-in-out ${index * 0.07}s infinite`,
-        }}
-      />
+      {/* Far wing (behind the body), only visible in flight */}
+      {flapping ? (
+        <path
+          d="M24 20 Q20 4 34 6 Q32 14 32 20 Z"
+          fill={plumage.wing}
+          opacity={0.6}
+          style={{
+            transformBox: "fill-box",
+            transformOrigin: "50% 100%",
+            animation: flap,
+          }}
+        />
+      ) : null}
       {/* Body */}
       <ellipse cx="28" cy="25" rx="16" ry="12.5" fill={plumage.body} />
       <ellipse cx="31" cy="29" rx="10" ry="7.5" fill={plumage.belly} />
@@ -204,14 +206,14 @@ export function BirdGlyph({ size, flip, plumage, still, index }: BirdGlyphProps)
       />
       {/* Beak */}
       <path d="M49.5 15.5 L56 17.6 L49.5 19.8 Z" fill="#ff9f1c" />
-      {/* Near wing, flapping */}
+      {/* Near wing: flapping in flight, folded along the body when perched */}
       <path
-        d="M20 22 Q24 2 40 8 Q34 16 34 24 Z"
+        d={flapping ? "M20 22 Q24 2 40 8 Q34 16 34 24 Z" : "M14 24 Q24 14 38 20 Q30 28 18 28 Z"}
         fill={plumage.wing}
         style={{
           transformBox: "fill-box",
           transformOrigin: "50% 100%",
-          animation: still ? undefined : `wing-flap 0.32s ease-in-out ${index * 0.07}s infinite`,
+          animation: flap,
         }}
       />
       {/* Tiny feet */}

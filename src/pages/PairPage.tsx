@@ -345,8 +345,8 @@ function SkyLinkPanel({ code, copied, onCopy }: SkyLinkPanelProps) {
 
       <div className="mt-9 border-t border-line pt-7">
         <p className="text-[0.95rem] leading-relaxed text-ink-soft">
-          You do not have to wait. Your world already exists, and anything you
-          tend to now will be there when they arrive.
+          You do not have to wait. Your world already exists, and everything
+          you grow now will be there when they arrive.
         </p>
 
         <Link

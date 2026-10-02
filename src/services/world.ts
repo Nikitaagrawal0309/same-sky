@@ -836,7 +836,7 @@ export function deriveSky(
  */
 export function describeWorld(snapshot: WorldSnapshot, world: WorldState): string {
   if (world.totalRituals === 0) {
-    return "Your world is waiting. It begins the first time either of you tends to something real.";
+    return "Your little world is waiting for its very first seed. One small, kind step from either of you today, and it will begin to bloom.";
   }
 
   if (snapshot.vitality < 0.15) {

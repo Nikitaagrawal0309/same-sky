@@ -72,7 +72,7 @@ export function GrowthGarden({ snapshot, history, domainShares }: GrowthGardenPr
       theme="meadow"
       eyebrow="you grow, it grows"
       title="Your living garden"
-      description="Everything you tend to in life shows up here as something green and growing."
+      description="Every little act of care takes root here, and grows."
     >
       {/* 1. The journey from seed to ancient tree */}
       <div className="overflow-hidden rounded-3xl bg-linear-to-b from-sky-200 via-sky-100 to-lime-100 p-4 shadow-soft dark:from-sky-950 dark:via-slate-900 dark:to-emerald-950">

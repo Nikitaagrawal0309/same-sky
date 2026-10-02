@@ -693,3 +693,70 @@ export function playEnterSwoop(): void {
   softNote(context, 1046.5, now + 0.58, 1.3, 0.15 * volume);
   softNote(context, 2093, now + 0.6, 0.9, 0.035 * volume);
 }
+
+/* -------------------------------------------------------------------------
+   Night wind chimes
+   ------------------------------------------------------------------------- */
+
+/** A pentatonic set, so any handful of notes always sounds gentle together. */
+const CHIME_NOTES_HZ = [1046.5, 1174.7, 1318.5, 1568, 1760, 2093];
+
+/**
+ * A breath of night wind stirring a wind chime: a soft swell of air, then
+ * three to five bell-like notes with long, shimmering tails. Follows the same
+ * sound preference as everything else.
+ */
+export function playWindChime(): void {
+  if (!chimesEnabled) return;
+
+  const context = getAudioContext();
+
+  if (!context || context.state !== "running") return;
+
+  const now = context.currentTime;
+  const volume = chimeVolume;
+
+  // The breeze: low-passed noise swelling in and out.
+  const noise = context.createBufferSource();
+  noise.buffer = getNoiseBuffer(context);
+  const air = context.createBiquadFilter();
+  air.type = "lowpass";
+  air.frequency.setValueAtTime(500, now);
+  air.frequency.linearRampToValueAtTime(900, now + 1.4);
+  const airGain = context.createGain();
+  airGain.gain.setValueAtTime(0.0001, now);
+  airGain.gain.exponentialRampToValueAtTime(0.05 * volume, now + 1.2);
+  airGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
+  noise.connect(air);
+  air.connect(airGain);
+  airGain.connect(context.destination);
+  noise.start(now);
+  noise.stop(now + 3.3);
+
+  // The chimes: struck metal is a sine plus a quieter, slightly sharp partial.
+  const strikes = 3 + Math.floor(Math.random() * 3);
+
+  for (let index = 0; index < strikes; index += 1) {
+    const startAt = now + 0.5 + index * (0.18 + Math.random() * 0.35);
+    const frequency = CHIME_NOTES_HZ[Math.floor(Math.random() * CHIME_NOTES_HZ.length)];
+
+    for (const [ratio, level] of [
+      [1, 1],
+      [2.76, 0.25],
+    ] as const) {
+      const oscillator = context.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency * ratio, startAt);
+
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0, startAt);
+      gain.gain.linearRampToValueAtTime(0.045 * volume * level, startAt + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 2.6 / ratio);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(startAt);
+      oscillator.stop(startAt + 2.7);
+    }
+  }
+}

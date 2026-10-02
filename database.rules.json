@@ -472,9 +472,9 @@
         },
         "plots": {
           "$plotId": {
-            ".validate": "$plotId.matches(/^[0-5]$/) && newData.hasChildren(['seedId', 'plantedOn', 'plantedBy']) && (data.exists() || newData.child('plantedBy').val() === auth.uid)",
+            ".validate": "$plotId.matches(/^[0-8]$/) && newData.hasChildren(['seedId', 'plantedOn', 'plantedBy']) && (data.exists() || newData.child('plantedBy').val() === auth.uid)",
             "seedId": {
-              ".validate": "newData.isString() && newData.val().matches(/^(sunflower|daisy|tulip|lavender|rose-bush|blueberry-bush|cherry-tree|apple-tree|orange-tree|mango-tree)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(sunflower|daisy|tulip|lavender|rose-bush|blueberry-bush|cherry-tree|apple-tree|orange-tree|mango-tree|pine-tree|maple-tree|willow-tree|peach-tree|lemon-tree|moon-tree)$/)"
             },
             "plantedOn": {
               ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"

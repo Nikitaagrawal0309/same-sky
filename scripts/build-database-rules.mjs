@@ -346,11 +346,12 @@ const rules = {
         weather: { ".validate": oneOf(["clear", "sunshine", "rainbow", "starry", "aurora"]) },
         plots: {
           $plotId: {
-            ".validate": `$plotId.matches(/^[0-5]$/) && newData.hasChildren(['seedId', 'plantedOn', 'plantedBy']) && (data.exists() || newData.child('plantedBy').val() === auth.uid)`,
+            ".validate": `$plotId.matches(/^[0-8]$/) && newData.hasChildren(['seedId', 'plantedOn', 'plantedBy']) && (data.exists() || newData.child('plantedBy').val() === auth.uid)`,
             seedId: {
               ".validate": oneOf([
                 "sunflower", "daisy", "tulip", "lavender", "rose-bush", "blueberry-bush",
                 "cherry-tree", "apple-tree", "orange-tree", "mango-tree",
+                "pine-tree", "maple-tree", "willow-tree", "peach-tree", "lemon-tree", "moon-tree",
               ]),
             },
             plantedOn: { ".validate": dateStr },

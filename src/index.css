@@ -334,6 +334,35 @@
   }
 }
 
+/* A leaf or petal letting go of a tree and drifting to the ground. */
+@keyframes leaf-fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(7px, 36px) rotate(220deg);
+    opacity: 0;
+  }
+}
+
+/* A night breeze: a stronger, quicker lean than the daytime sway. */
+@keyframes sway-wind {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  35% {
+    transform: rotate(7deg);
+  }
+  60% {
+    transform: rotate(3deg);
+  }
+}
+
 @keyframes cloud-drift {
   from {
     transform: translate3d(-30vw, 0, 0);

@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Plus, Shovel } from "lucide-react";
+import { Lock, Shovel } from "lucide-react";
 
 import { useBadges, useGarden } from "../../hooks/useGarden";
 import { usePrefersStillness } from "../../hooks/useTheme";
 import { badgeUnlocking } from "../../services/badges";
 import { plantGrowth, plantStageLabel } from "../../services/plants";
 import type { GardenWeatherId, SeedDefinition } from "../../types/garden";
-import { GARDEN_PLOT_COUNT, GARDEN_WEATHERS, SEEDS } from "../../types/garden";
+import { GARDEN_WEATHERS, SEEDS } from "../../types/garden";
 import { formatDayAndMonth } from "../../utils/date";
 import { cx } from "../../utils/helpers";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
+import { GardenIsland } from "./GardenIsland";
 import { PlantArt } from "./PlantArt";
 
 /**
@@ -79,66 +80,21 @@ export function SeedGarden() {
         })}
       </div>
 
-      {/* The plots */}
-      <div className="relative mt-4 overflow-hidden rounded-3xl">
+      {/* The island: nine plots on a floating patch of meadow */}
+      <div className="relative mt-4 overflow-hidden rounded-3xl px-2 pt-8 pb-3 sm:px-6">
         <GardenSky weather={activeWeather} still={still} />
-
-        <div className="relative grid grid-cols-3 gap-1 px-2 pt-8 pb-3 sm:grid-cols-6 sm:gap-2 sm:px-3 sm:pt-10">
-          {Array.from({ length: GARDEN_PLOT_COUNT }, (_, index) => {
-            const plotId = String(index);
-            const plot = plots[plotId];
-            const seed = plot ? SEEDS.find((candidate) => candidate.id === plot.seedId) : undefined;
-
-            if (!plot || !seed) {
-              return (
-                <motion.button
-                  key={plotId}
-                  type="button"
-                  onClick={() => setSowingPlot(plotId)}
-                  whileHover={still ? undefined : { y: -3 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="group flex h-40 flex-col items-center justify-end rounded-2xl pb-2 sm:h-48"
-                  aria-label={`Plot ${index + 1} is empty. Sow a seed`}
-                >
-                  <span className="mb-2 grid size-12 place-items-center rounded-full border-2 border-dashed border-white/90 bg-white/40 text-white shadow-sm transition-colors group-hover:bg-white/70 group-hover:text-emerald-700">
-                    <Plus aria-hidden className="size-5" />
-                  </span>
-                  <span className="h-5 w-20 rounded-[50%] bg-amber-900/70" />
-                  <span className="mt-1.5 text-xs font-bold text-white drop-shadow">Sow a seed</span>
-                </motion.button>
-              );
-            }
-
-            const growth = plantGrowth(plot, history);
-
-            return (
-              <motion.button
-                key={plotId}
-                type="button"
-                onClick={() => setInspecting(plotId)}
-                whileHover={still ? undefined : { y: -3 }}
-                className="flex h-40 flex-col items-center justify-end rounded-2xl pb-2 sm:h-48"
-                aria-label={`${seed.name}, ${plantStageLabel(growth, seed.id)}`}
-              >
-                <motion.div
-                  className="h-32 w-full"
-                  initial={still ? false : { scale: 0.4, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 160, damping: 14 }}
-                  style={{ transformOrigin: "50% 100%" }}
-                >
-                  <PlantArt seedId={seed.id} growth={growth} still={still} className="size-full" />
-                </motion.div>
-                <span className="mt-1 max-w-full truncate rounded-full bg-white/90 px-2 py-0.5 text-[0.7rem] font-bold text-ink shadow-sm sm:text-xs dark:bg-slate-900/80">
-                  {seed.emoji} {seed.name}
-                </span>
-                <span className="mt-1 h-1.5 w-16 overflow-hidden rounded-full bg-white/60">
-                  <span className="block h-full rounded-full bg-linear-to-r from-lime-400 to-emerald-500" style={{ width: `${growth * 100}%` }} />
-                </span>
-              </motion.button>
-            );
-          })}
+        <div className="relative">
+          <GardenIsland
+            plots={plots}
+            history={history}
+            still={still}
+            onSow={(plotId) => setSowingPlot(plotId)}
+            onInspect={(plotId) => setInspecting(plotId)}
+          />
         </div>
+        <p className="relative mt-1 text-center text-xs font-semibold text-white drop-shadow">
+          Tap an empty patch to sow, or a plant to see how it's growing
+        </p>
       </div>
 
       {local ? (
