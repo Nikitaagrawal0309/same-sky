@@ -106,6 +106,18 @@ export const PATHS = {
 
   /** The shared, sown garden: which seed sits in which plot, and its weather. */
   garden: (worldId: string) => `gardens/${worldId}`,
+
+  /** Daily trackers: water, steps, wake/bed check-ins, focus — per person per day. */
+  measures: (worldId: string) => `measures/${worldId}`,
+  measuresFor: (worldId: string, date: DateKey, uid: string) => `measures/${worldId}/${date}/${uid}`,
+
+  /** Each person's tracker goals. */
+  goals: (worldId: string) => `goals/${worldId}`,
+  goalsFor: (worldId: string, uid: string) => `goals/${worldId}/${uid}`,
+
+  /** A focus session in progress, per person. */
+  focus: (worldId: string) => `focus/${worldId}`,
+  focusFor: (worldId: string, uid: string) => `focus/${worldId}/${uid}`,
 } as const;
 
 /* -------------------------------------------------------------------------

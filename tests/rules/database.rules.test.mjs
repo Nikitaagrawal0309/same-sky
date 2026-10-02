@@ -291,3 +291,36 @@ describe("the couple", () => {
     await assertFails(get(ref(db("dave"), "users/alice")));
   });
 });
+
+/* ------------------------------------------------------------------ */
+describe("daily trackers", () => {
+  const goals = { water: 7, steps: 7000, wakeTime: "07:00", sleepTime: "23:00", focusMinutes: 50, sessionMinutes: 25 };
+
+  test("strangers can't see anyone's trackers", async () => {
+    await assertFails(get(ref(db("carol"), "measures/w1")));
+    await assertFails(get(ref(db("carol"), "goals/w1")));
+    await assertFails(get(ref(db("carol"), "focus/w1")));
+  });
+
+  test("each partner writes only their own measures, within sensible limits", async () => {
+    await assertSucceeds(set(ref(db("alice"), "measures/w1/2026-10-01/alice/water"), 5));
+    await assertSucceeds(update(ref(db("alice"), "measures/w1/2026-10-01/alice"), { wakeAt: NOW, wakeTime: "06:52" }));
+    await assertFails(set(ref(db("bob"), "measures/w1/2026-10-01/alice/water"), 5));
+    await assertFails(set(ref(db("alice"), "measures/w1/2026-10-01/alice/water"), 999));
+    await assertFails(set(ref(db("alice"), "measures/w1/2026-10-01/alice/wakeTime"), "25:99"));
+    await assertFails(set(ref(db("alice"), "measures/w1/2026-10-01/alice/hacked"), true));
+  });
+
+  test("goals are personal and bounded", async () => {
+    await assertSucceeds(set(ref(db("alice"), "goals/w1/alice"), goals));
+    await assertFails(set(ref(db("bob"), "goals/w1/alice"), goals));
+    await assertFails(set(ref(db("alice"), "goals/w1/alice"), { ...goals, water: 500 }));
+  });
+
+  test("focus sessions: your own, and never absurdly long", async () => {
+    await assertSucceeds(set(ref(db("alice"), "focus/w1/alice"), { startedAt: NOW, endsAt: NOW + 25 * 60000, minutes: 25 }));
+    await assertSucceeds(get(ref(db("bob"), "focus/w1/alice")));
+    await assertFails(set(ref(db("bob"), "focus/w1/alice"), { startedAt: NOW, endsAt: NOW + 60000, minutes: 1 }));
+    await assertFails(set(ref(db("alice"), "focus/w1/alice"), { startedAt: NOW, endsAt: NOW + 30 * 24 * HOURS, minutes: 25 }));
+  });
+});

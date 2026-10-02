@@ -6,6 +6,7 @@ import { useWorldStore } from "../store/worldStore";
 import { CompletionChart } from "../components/world/CompletionChart";
 import { EnergyChart } from "../components/world/EnergyChart";
 import { GrowthGarden } from "../components/world/GrowthGarden";
+import { RhythmsPanel } from "../components/trackers/RhythmsPanel";
 import { GrowthPeriod } from "../components/world/GrowthPeriod";
 import { MonthCalendar } from "../components/world/MonthCalendar";
 import { YearChart } from "../components/world/YearChart";
@@ -13,7 +14,7 @@ import { EmptyState } from "../components/ui/Card";
 import { NaturePanel } from "../components/ui/NaturePanel";
 import { Spinner } from "../components/ui/Icon";
 import { recentDateKeys } from "../utils/date";
-import { cx, formatPercent } from "../utils/helpers";
+import { cx, firstNameOf, formatPercent } from "../utils/helpers";
 import type { RitualId } from "../types/ritual";
 
 /**
@@ -100,6 +101,8 @@ export default function DashboardPage() {
       <GrowthHeader />
 
       <GrowthGarden snapshot={snapshot} history={history} domainShares={domainShares} />
+
+      <RhythmsPanel partnerName={partner ? firstNameOf(partner.displayName) : null} />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Harmony" value={formatPercent(snapshot.harmony)} tone="pink" />

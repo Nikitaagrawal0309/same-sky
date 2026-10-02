@@ -38,6 +38,7 @@ const nonNeg = "newData.isNumber() && newData.val() >= 0";
 const bool = "newData.isBoolean()";
 const DATE = "/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/";
 const dateStr = `newData.isString() && newData.val().matches(${DATE})`;
+const CLOCK = "/^([01][0-9]|2[0-3]):[0-5][0-9]$/";
 const oneOf = (values) => `newData.isString() && newData.val().matches(/^(${values.join("|")})$/)`;
 const deny = { ".validate": false };
 
@@ -335,6 +336,62 @@ const rules = {
             at: { ".validate": num },
             $other: deny,
           },
+        },
+      },
+    },
+
+    /* ---------------------------------------------------------------- */
+    measures: {
+      $worldId: {
+        ".read": member("$worldId"),
+        $date: {
+          ".validate": `$date.matches(${DATE})`,
+          $uid: {
+            ".write": `${member("$worldId")} && auth.uid === $uid`,
+            water: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30" },
+            steps: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000" },
+            wakeAt: { ".validate": num },
+            wakeTime: { ".validate": `newData.isString() && newData.val().matches(${CLOCK})` },
+            sleepAt: { ".validate": num },
+            sleepTime: { ".validate": `newData.isString() && newData.val().matches(${CLOCK})` },
+            focusMinutes: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1440" },
+            focusSessions: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            $other: deny,
+          },
+        },
+      },
+    },
+
+    goals: {
+      $worldId: {
+        ".read": member("$worldId"),
+        $uid: {
+          ".write": `${member("$worldId")} && auth.uid === $uid`,
+          ".validate": "newData.hasChildren(['water', 'steps', 'wakeTime', 'sleepTime', 'focusMinutes', 'sessionMinutes'])",
+          water: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20" },
+          steps: { ".validate": "newData.isNumber() && newData.val() >= 500 && newData.val() <= 50000" },
+          wakeTime: { ".validate": `newData.isString() && newData.val().matches(${CLOCK})` },
+          sleepTime: { ".validate": `newData.isString() && newData.val().matches(${CLOCK})` },
+          focusMinutes: { ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 600" },
+          sessionMinutes: { ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 180" },
+          alarms: { ".validate": bool },
+          $other: deny,
+        },
+      },
+    },
+
+    focus: {
+      $worldId: {
+        ".read": member("$worldId"),
+        $uid: {
+          ".write": `${member("$worldId")} && auth.uid === $uid`,
+          // A session can't end before it starts or more than four hours out.
+          ".validate": "newData.hasChildren(['startedAt', 'endsAt', 'minutes']) && newData.child('endsAt').val() > newData.child('startedAt').val() && newData.child('endsAt').val() <= now + 14400000",
+          startedAt: { ".validate": num },
+          endsAt: { ".validate": num },
+          minutes: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 240" },
+          together: { ".validate": bool },
+          $other: deny,
         },
       },
     },

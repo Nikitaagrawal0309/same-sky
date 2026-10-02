@@ -29,6 +29,7 @@ import { DailyNoteCard } from "../components/world/DailyNote";
 import { JournalHistory } from "../components/world/JournalHistory";
 import { LiveClock } from "../components/world/LiveClock";
 import { ProgressCharts } from "../components/world/ProgressCharts";
+import { TrackersPanel } from "../components/trackers/TrackersPanel";
 import { MilestoneToast } from "../components/world/MilestoneToast";
 import { RitualCard } from "../components/world/RitualCard";
 import { RitualPicker } from "../components/world/RitualPicker";
@@ -249,6 +250,8 @@ export default function WorldPage() {
             )}
           </div>
         </NaturePanel>
+
+        <TrackersPanel partnerName={partnerFirstName ?? null} />
 
         <ProgressCharts />
 
