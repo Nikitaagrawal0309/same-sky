@@ -836,7 +836,7 @@ export function deriveSky(
  */
 export function describeWorld(snapshot: WorldSnapshot, world: WorldState): string {
   if (world.totalRituals === 0) {
-    return "Your little world is waiting for its very first seed. One small, kind step from either of you today, and it will begin to bloom.";
+    return "Every effort you make towards each other will bloom into a radiant world.";
   }
 
   if (snapshot.vitality < 0.15) {
