@@ -15,7 +15,7 @@
   Bump VERSION to force every installed copy to drop its old caches.
 */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL_CACHE = `same-sky-shell-${VERSION}`;
 const ASSET_CACHE = `same-sky-assets-${VERSION}`;
 
@@ -24,6 +24,7 @@ const SHELL = [
   "/index.html",
   "/manifest.webmanifest",
   "/favicon.svg",
+  "/theme-init.js",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",

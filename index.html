@@ -29,35 +29,8 @@
       property="og:description"
       content="A quiet, shared world for two people growing together."
     />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Gaegu:wght@400;700&family=Indie+Flower&family=Patrick+Hand&family=Shadows+Into+Light&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap"
-    />
-
-    <script>
-      /*
-        Resolve the theme before first paint so returning to Same Sky is never
-        preceded by a flash of the wrong environment. Mirrors the logic in
-        src/services/preferences.ts — keep the storage key in sync.
-      */
-      (function () {
-        try {
-          var stored = localStorage.getItem("same-sky:theme");
-          var theme =
-            stored === "light" || stored === "dark"
-              ? stored
-              : window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light";
-          document.documentElement.dataset.theme = theme;
-        } catch (_) {
-          /* Private browsing or blocked storage — the light default stands. */
-        }
-      })();
-    </script>
+    <!-- Resolves light/dark before first paint; a file so inline scripts can stay forbidden. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
