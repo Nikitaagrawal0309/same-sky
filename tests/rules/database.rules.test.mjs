@@ -216,8 +216,8 @@ describe("pairing", () => {
   });
 
   test("a new person can start their own pair", async () => {
-    await assertSucceeds(set(ref(db("carol"), "pairs/w3"), pair("w3", "carol", null, "CARO22")));
-    await assertSucceeds(set(ref(db("carol"), "inviteCodes/CARO22"), { inviteCode: "CARO22", ownerUid: "carol", pairId: "w3", used: false, createdAt: NOW }));
+    await assertSucceeds(set(ref(db("carol"), "pairs/w3"), pair("w3", "carol", null, "CARE22")));
+    await assertSucceeds(set(ref(db("carol"), "inviteCodes/CARE22"), { inviteCode: "CARE22", ownerUid: "carol", pairId: "w3", used: false, createdAt: NOW }));
   });
 });
 
