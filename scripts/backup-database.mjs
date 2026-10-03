@@ -5,7 +5,8 @@
  * note and mood) to a dated JSON file OUTSIDE this project folder, so it can
  * never be committed to the public GitHub repository by accident.
  *
- * Default location: <your home>/Documents/SameSky-Backups
+ * Default location: <your home>/SameSky-Backups  (e.g. C:\Users\you\SameSky-Backups)
+ * — deliberately not Documents, which OneDrive often syncs to the cloud.
  * Override with:    npm run backup -- "D:\\Some\\Private\\Folder"
  *
  * Needs `firebase login` once on this computer. Prints only the file size and
@@ -18,10 +19,16 @@ import { join, resolve, sep } from "node:path";
 
 const PROJECT = "tracker-25c92";
 const projectRoot = resolve(new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
-const folder = resolve(process.argv[2] ?? join(homedir(), "Documents", "SameSky-Backups"));
+const folder = resolve(process.argv[2] ?? join(homedir(), "SameSky-Backups"));
 
 if (folder === projectRoot || folder.startsWith(projectRoot + sep)) {
   console.error("Refusing to save a backup inside the project folder — it could end up on GitHub.");
+  process.exit(1);
+}
+
+// An unencrypted copy must never sync to a cloud drive on its own.
+if (/onedrive|google drive|dropbox|icloud/i.test(folder)) {
+  console.error("Refusing to save into a cloud-synced folder. Encrypt the backup first, then upload the locked copy yourself.");
   process.exit(1);
 }
 
