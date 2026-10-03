@@ -27,3 +27,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Never commit database backups or downloaded rules (private data).
+*backup*.json
+previous-rules-backup.json

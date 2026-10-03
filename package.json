@@ -11,7 +11,8 @@
     "deploy": "npm run build && npx firebase-tools deploy --only hosting",
     "rules:build": "node scripts/build-database-rules.mjs",
     "test:rules": "npm run rules:build && npx firebase-tools emulators:exec --only database --project demo-same-sky \"node --test tests/rules/database.rules.test.mjs\"",
-    "rules:deploy": "npm run rules:build && npx firebase-tools deploy --only database"
+    "rules:deploy": "npm run rules:build && npx firebase-tools deploy --only database",
+    "backup": "node scripts/backup-database.mjs"
   },
   "dependencies": {
     "@fontsource/caveat": "^5.3.0",
