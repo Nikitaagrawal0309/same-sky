@@ -12,8 +12,8 @@
  * Needs `firebase login` once on this computer. Prints only the file size and
  * section names — never the private contents.
  */
-import { execSync } from "node:child_process";
-import { mkdirSync, readFileSync, statSync } from "node:fs";
+import { execSync, spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
 
@@ -46,4 +46,26 @@ const kilobytes = Math.round(statSync(file).size / 1024);
 console.log(`\nSaved: ${file}`);
 console.log(`Size:  ${kilobytes} KB`);
 console.log(`Contains: ${Object.keys(data).join(", ") || "(empty database)"}`);
-console.log("\nThis file holds private data. Keep it out of shared folders, and encrypt it before uploading anywhere.");
+const SEVEN_ZIP = ["C:\\Program Files\\7-Zip\\7z.exe", "C:\\Program Files (x86)\\7-Zip\\7z.exe"].find((candidate) =>
+  existsSync(candidate),
+);
+
+if (SEVEN_ZIP && process.stdin.isTTY) {
+  const locked = file.replace(/\.json$/, ".7z");
+
+  console.log("\nNow lock it with a password. Type it twice (nothing appears as you type, that's normal).");
+  console.log("Use something long, like four random words, and save it in your password manager.\n");
+
+  // -p with no value makes 7-Zip ask for the password itself; -mhe=on hides file names too.
+  const result = spawnSync(SEVEN_ZIP, ["a", "-t7z", "-mhe=on", "-p", locked, file], { stdio: "inherit" });
+
+  if (result.status === 0 && existsSync(locked) && statSync(locked).size > 0) {
+    unlinkSync(file);
+    console.log(`\nLocked: ${locked}`);
+    console.log("The unlocked copy has been deleted. Upload the .7z file to a private cloud folder.");
+  } else {
+    console.log("\nLocking didn't finish, so the unlocked copy was kept. Run `npm run backup` again to retry.");
+  }
+} else {
+  console.log("\nThis file holds private data. Keep it out of shared folders, and encrypt it before uploading anywhere.");
+}
